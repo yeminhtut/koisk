@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="31.745" height="34.367" viewBox="0 0 31.745 34.367">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: url(#linear-gradient);
+      }
+
+      .cls-2 {
+        fill: url(#linear-gradient-2);
+      }
+
+      .cls-3 {
+        fill: url(#linear-gradient-3);
+      }
+
+      .cls-4, .cls-5 {
+        fill: #fff;
+      }
+
+      .cls-4 {
+        opacity: 0.064;
+      }
+
+      .cls-5 {
+        opacity: 0.07;
+      }
+    </style>
+    <linearGradient id="linear-gradient" x1="0.741" y1="0.415" x2="0" y2="0.245" gradientUnits="objectBoundingBox">
+      <stop offset="0" stop-color="#2746a1"/>
+      <stop offset="1" stop-color="#051e6a"/>
+    </linearGradient>
+    <linearGradient id="linear-gradient-2" x1="0.271" y1="0.11" x2="0.832" y2="1.058" gradientUnits="objectBoundingBox">
+      <stop offset="0" stop-color="#e0e0e0"/>
+      <stop offset="1" stop-color="#c9c9c9"/>
+    </linearGradient>
+    <linearGradient id="linear-gradient-3" x1="1" y1="1" x2="0" gradientUnits="objectBoundingBox">
+      <stop offset="0" stop-color="#53b387"/>
+      <stop offset="1" stop-color="#1f7b50"/>
+    </linearGradient>
+  </defs>
+  <g id="ic_logo" transform="translate(-26.991 -20.92)">
+    <g id="Group_138" data-name="Group 138" transform="translate(26.998 20.92)">
+      <path id="Path_388" data-name="Path 388" class="cls-1" d="M.57,0H19.9A11.633,11.633,0,0,1,31.533,11.633a.253.253,0,0,1-.253.253H.458A.458.458,0,0,1,0,11.428V.57A.57.57,0,0,1,.57,0Z" transform="translate(0.089)"/>
+      <path id="Path_387" data-name="Path 387" class="cls-2" d="M-1253.264,68.912l14.365-.033,15.019,10h-14.274Z" transform="translate(1255.619 -54.994)"/>
+      <path id="Rectangle_842" data-name="Rectangle 842" class="cls-3" d="M.246,0H31.739a0,0,0,0,1,0,0V11.479a.464.464,0,0,1-.464.464H11.7A11.7,11.7,0,0,1,0,.246v0A.246.246,0,0,1,.246,0Z" transform="translate(0 22.425)"/>
+    </g>
+    <path id="Path_389" data-name="Path 389" class="cls-4" d="M1343.682-1471.08s-2.608,11.122-21.69,11.988c.175-4.26,0-11.988,0-11.988Z" transform="translate(-1295 1492)"/>
+    <path id="Path_390" data-name="Path 390" class="cls-5" d="M1351.469-1437.864c-.267,6.835-6.442,12.537-20.422,11.855-9.756-3.031-8.761-11.855-8.761-11.855S1351.319-1437.829,1351.469-1437.864Z" transform="translate(-1295.075 1481.229)"/>
+  </g>
+</svg>

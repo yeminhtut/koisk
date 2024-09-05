@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="46.537" height="46.537" viewBox="0 0 46.537 46.537">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #f5f6fa;
+      }
+
+      .cls-2 {
+        fill: #7ba4f4;
+      }
+
+      .cls-3, .cls-4, .cls-6 {
+        fill: none;
+      }
+
+      .cls-3, .cls-4 {
+        stroke: #fff;
+      }
+
+      .cls-4 {
+        stroke-width: 1.3px;
+      }
+
+      .cls-5 {
+        stroke: none;
+      }
+    </style>
+  </defs>
+  <g id="ic_profile" transform="translate(-306.731 -15.73)">
+    <circle id="Ellipse_110" data-name="Ellipse 110" class="cls-1" cx="23.269" cy="23.269" r="23.269" transform="translate(306.731 15.731)"/>
+    <circle id="Ellipse_43" data-name="Ellipse 43" class="cls-2" cx="19.944" cy="19.944" r="19.944" transform="translate(310.056 19.056)"/>
+    <g id="Ellipse_111" data-name="Ellipse 111" class="cls-3" transform="translate(326.13 29.767)">
+      <ellipse class="cls-5" cx="3.89" cy="3.89" rx="3.89" ry="3.89"/>
+      <ellipse class="cls-6" cx="3.89" cy="3.89" rx="3.39" ry="3.39"/>
+    </g>
+    <g id="Rectangle_916" data-name="Rectangle 916" class="cls-4" transform="translate(322.672 38.412)">
+      <path class="cls-5" d="M6.366,0H8.331A6.366,6.366,0,0,1,14.7,6.366v0a1.415,1.415,0,0,1-1.415,1.415H1.415A1.415,1.415,0,0,1,0,6.366v0A6.366,6.366,0,0,1,6.366,0Z"/>
+      <path class="cls-6" d="M6.229.65h2.24a5.579,5.579,0,0,1,5.579,5.579v0a.9.9,0,0,1-.9.9H1.552a.9.9,0,0,1-.9-.9v0A5.579,5.579,0,0,1,6.229.65Z"/>
+    </g>
+  </g>
+</svg>

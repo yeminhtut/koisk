@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60">
+  <g id="ic_sales_operation" data-name="ic_sales operation" transform="translate(15873 21124)">
+    <rect id="Rectangle_2148" data-name="Rectangle 2148" width="60" height="60" transform="translate(-15873 -21124)" fill="#fff" opacity="0"/>
+    <g id="Group_4704" data-name="Group 4704" transform="translate(1800 -439.201)">
+      <path id="Subtraction_28" data-name="Subtraction 28" d="M20.69,29.2H4a4,4,0,0,1-4-4V9.124H8.125a1,1,0,0,0,1-1V0H20.69a4,4,0,0,1,4,4V25.2A4.005,4.005,0,0,1,20.69,29.2ZM17.5,17.8a.5.5,0,0,0-.5.5v5a.5.5,0,0,0,.5.5h2a.5.5,0,0,0,.5-.5v-5a.5.5,0,0,0-.5-.5Zm-4,2a.5.5,0,0,0-.5.5v3a.5.5,0,0,0,.5.5h2a.5.5,0,0,0,.5-.5v-3a.5.5,0,0,0-.5-.5Zm-4-4a.5.5,0,0,0-.5.5v7a.5.5,0,0,0,.5.5h2a.5.5,0,0,0,.5-.5v-7a.5.5,0,0,0-.5-.5Zm-4,4a.5.5,0,0,0-.5.5v3a.5.5,0,0,0,.5.5h2a.5.5,0,0,0,.5-.5v-3a.5.5,0,0,0-.5-.5Z" transform="translate(-17655 -20669.799)" fill="#fff"/>
+      <path id="Rectangle_970" data-name="Rectangle 970" d="M7.514,0h0a0,0,0,0,1,0,0V6.679a.835.835,0,0,1-.835.835H0a0,0,0,0,1,0,0v0A7.514,7.514,0,0,1,7.514,0Z" transform="translate(-17655 -20669.799)" fill="#fff"/>
+    </g>
+  </g>
+</svg>

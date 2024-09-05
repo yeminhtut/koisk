@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="73" height="61" viewBox="0 0 73 61">
+  <g id="ic_db_draft" transform="translate(-1133 -237)">
+    <g id="ic_survey" transform="translate(-3108 -1224.13)">
+      <path id="Subtraction_19" data-name="Subtraction 19" d="M44,56H5a5.005,5.005,0,0,1-5-5V5A5.006,5.006,0,0,1,5,0H44a5.006,5.006,0,0,1,5,5V51A5.006,5.006,0,0,1,44,56ZM14.7,28.8v9.6H34.3V28.8Zm4.064-9.739h0L16.331,21.3l4.8,5.113,10.11-8.462-2.076-2.461L21.423,22l-2.659-2.939Z" transform="translate(4241 1461.13)" fill="#ccc"/>
+    </g>
+    <rect id="Rectangle_1771" data-name="Rectangle 1771" width="30" height="48" rx="3" transform="translate(1171 250)" fill="#fff"/>
+    <path id="Subtraction_28" data-name="Subtraction 28" d="M13753-7875h-13a2.005,2.005,0,0,1-2-2v-39a2,2,0,0,1,2-2h13a2,2,0,0,1,2,2v6h-7.5a1.5,1.5,0,0,0-1.5,1.5,1.5,1.5,0,0,0,1.5,1.5h7.5v3h-5.5a1.5,1.5,0,0,0-1.5,1.5,1.5,1.5,0,0,0,1.5,1.5h5.5v3h-7.5a1.5,1.5,0,0,0-1.5,1.5,1.5,1.5,0,0,0,1.5,1.5h7.5v3h-5.5a1.5,1.5,0,0,0-1.5,1.5,1.5,1.5,0,0,0,1.5,1.5h5.5v3h-7.5a1.5,1.5,0,0,0-1.5,1.5,1.5,1.5,0,0,0,1.5,1.5h7.5v6A2,2,0,0,1,13753-7875Z" transform="translate(-12564 8171)" fill="#ccc"/>
+    <g id="Group_2962" data-name="Group 2962" transform="translate(2 1)">
+      <path id="Subtraction_29" data-name="Subtraction 29" d="M13749-7886h-8a2,2,0,0,1-2-2v-19h12v19A2,2,0,0,1,13749-7886Zm2-24h-12v-2a6.007,6.007,0,0,1,6-6,6.006,6.006,0,0,1,6,6v2Z" transform="translate(-12547 8170)" fill="#ccc"/>
+      <path id="Polygon_10" data-name="Polygon 10" d="M5.143,1.429a1,1,0,0,1,1.715,0l4.234,7.056A1,1,0,0,1,10.234,10H1.766A1,1,0,0,1,.909,8.486Z" transform="translate(1204 296) rotate(180)" fill="#ccc"/>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="88.008" height="56" viewBox="0 0 88.008 56">
+  <g id="ic_db_signage2" transform="translate(-502 -244)">
+    <path id="Path_1166" data-name="Path 1166" d="M5,0H75a5,5,0,0,1,5,5V45a5,5,0,0,1-5,5H5a5,5,0,0,1-5-5V5A5,5,0,0,1,5,0Z" transform="translate(502 244)" fill="#56bb76"/>
+    <rect id="Rectangle_1786" data-name="Rectangle 1786" width="72" height="44" transform="translate(506 247)" fill="#fff"/>
+    <path id="Path_1167" data-name="Path 1167" d="M2,0H38a2,2,0,0,1,0,4H2A2,2,0,0,1,2,0Z" transform="translate(522 296)" fill="#56bb76"/>
+    <g id="Group_2970" data-name="Group 2970" transform="translate(-592 13)">
+      <circle id="Ellipse_171" data-name="Ellipse 171" cx="10.5" cy="10.5" r="10.5" transform="translate(1160 266)" fill="#fff"/>
+      <path id="Path_635" data-name="Path 635" d="M-12540.187,750.136l4.689-6.743,5.545,6.743,4.952-6.743" transform="translate(13706 -471)" fill="none" stroke="#5faa4e" stroke-width="2.5" opacity="0.372"/>
+    </g>
+    <g id="Group_2973" data-name="Group 2973" transform="translate(313)">
+      <circle id="Ellipse_388" data-name="Ellipse 388" cx="2" cy="2" r="2" transform="translate(236.697 261.383)" fill="#56bb76"/>
+      <path id="Path_1168" data-name="Path 1168" d="M7.5,0l7.533,9.143h-15Z" transform="translate(216.697 268.383)" fill="#56bb76"/>
+      <path id="Subtraction_30" data-name="Subtraction 30" d="M12.281,12.355H6.558L0,4.593,3.035,0,12.28,12.354Z" transform="translate(227.682 265.16)" fill="#56bb76"/>
+    </g>
+  </g>
+</svg>

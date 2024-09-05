@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="94" height="56" viewBox="0 0 94 56">
+  <g id="ic_db_signage1" transform="translate(-187 -244)">
+    <g id="Group_2969" data-name="Group 2969" transform="translate(-21)" opacity="0.191">
+      <rect id="Rectangle_1783" data-name="Rectangle 1783" width="70" height="44" rx="5" transform="translate(232 251)" fill="#5387ed"/>
+      <rect id="Rectangle_1784" data-name="Rectangle 1784" width="35" height="4" rx="2" transform="translate(249 296)" fill="#5387ed"/>
+    </g>
+    <rect id="Rectangle_1780" data-name="Rectangle 1780" width="80" height="50" rx="5" transform="translate(187 244)" fill="#5387ed"/>
+    <rect id="Rectangle_1781" data-name="Rectangle 1781" width="72" height="44" transform="translate(191 247)" fill="#fff"/>
+    <rect id="Rectangle_1782" data-name="Rectangle 1782" width="40" height="4" rx="2" transform="translate(207 296)" fill="#5387ed"/>
+    <g id="Group_2972" data-name="Group 2972">
+      <circle id="Ellipse_388" data-name="Ellipse 388" cx="2" cy="2" r="2" transform="translate(236.697 261.383)" fill="#5387ed"/>
+      <path id="Path_1168" data-name="Path 1168" d="M7.5,0l7.533,9.143h-15Z" transform="translate(216.697 268.383)" fill="#5387ed"/>
+      <path id="Subtraction_30" data-name="Subtraction 30" d="M12.281,12.355H6.558L0,4.593,3.035,0,12.28,12.354Z" transform="translate(227.682 265.16)" fill="#5387ed"/>
+    </g>
+  </g>
+</svg>
