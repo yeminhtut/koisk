@@ -39,7 +39,6 @@
 
   .menu-container {
     font-family: Arial, sans-serif;
-    padding: 20px;
     background-color: #fff;
 }
 
@@ -93,33 +92,44 @@
 
 .menu-item {
     display: flex;
-    align-items: center;
     gap: 15px;
 }
 
 .menu-item-image {
-    width: 60px;
-    height: 60px;
+    width: 150px;
+    height: 150px;
     object-fit: cover;
     border-radius: 8px;
 }
 
 .menu-item-details h3 {
-    margin: 0;
-    font-size: 18px;
-    color: #333;
+  color: #51545D;
+  font-family: BrownTT;
+  font-size: 20px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: normal;
+  margin-top: 0;
 }
 
 .menu-item-details p {
-    margin: 5px 0;
-    color: #666;
-    font-size: 14px;
+    overflow: hidden;
+    color: var(--rgb-120131142, #78838E);
+    text-overflow: ellipsis;
+    font-family: BrownTT;
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
 }
 
 .menu-item-price {
-    font-size: 16px;
-    color: #FFC107;
-    font-weight: bold;
+  color: #B39137;
+  font-family: BrownTT;
+  font-size: 22px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
 }
 
 .product-detail-container {
@@ -165,14 +175,93 @@
 }
 
 .add-to-order {
-    width: 100%;
-    padding: 16px 0;
-    background-color: #8a8a8a;
+    //width: 100%;
+    padding: 20px 0;
+    background-color: #51545D;
     color: white;
     font-size: 18px;
     text-align: center;
     border: none;
     cursor: pointer;
-    border-radius: 8px;
+    margin-top: auto;
+    position: fixed;
+    bottom: 0;
+    right: 0;
 }
+
+.add-item {
+  background-color: #78838E;
+  padding: 20px 0;
+    background-color: #51545D;
+    color: white;
+    font-size: 18px;
+    text-align: center;
+    border: none;
+    cursor: pointer;
+    margin-top: auto;
+}
+
+.order-confirmation-container {
+    background-color: #7B848D; /* Gray background */
+    height: 100vh; /* Full viewport height */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white; /* White text color */
+    font-family: 'Arial', sans-serif; /* Adjust as needed */
+  }
+  
+  .text-content {
+    text-align: center;
+  }
+  
+  .main-heading {
+    font-size: 24px;
+    color: #D6B04A; /* Yellow color for the main heading */
+  }
+  
+  .sub-heading {
+    font-size: 14px;
+    color: white; /* Adjust based on readability */
+  }
+  
+  .order-number {
+    text-align: center;
+    margin-top: 20px;
+  }
+  
+  .order-number p {
+    font-size: 16px;
+  }
+  
+  .order-number h2 {
+    font-size: 48px;
+    color: white;
+  }
+  
+  .receipt-icon {
+    margin-top: 30px;
+  }
+  
+  .receipt-icon img {
+    width: 60px;
+    height: auto;
+  }
+
+  .clsbtn {
+    color: #51545D;
+
+font-family: BrownTT;
+font-size: 22px;
+font-style: normal;
+font-weight: 300;
+  }
+
+  @media (max-width: 768px) {
+    .d-none {
+       display: none;
+    }
+}
+  
 

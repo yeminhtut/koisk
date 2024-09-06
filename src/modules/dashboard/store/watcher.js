@@ -12,7 +12,7 @@ function* watchProductGetAllRequest() {
         function* (action) {
             yield* querySaga(
                 action,
-                '/sales/v1/product-search/productgroup/?categorycode=TOP10TRENDING&language=en&segment=T1&sort=sortorder&status=Active&storeid=1013',
+                '/sales/v1/product-search/fields?categorycodes=CAFE01&language=en&pageno=1&pagesize=100&segment=T1&sort=sortorder&status=Active&stopsell=N&storeid=1020',
                 appActions.PRODUCT_GET_ALL_SUCCESS,
                 appActions.PRODUCT_GET_ALL_FAILURE,
             );

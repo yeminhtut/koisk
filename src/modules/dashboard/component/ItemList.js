@@ -10,22 +10,22 @@ const URL = window?.config?.END_POINT;
 const ItemList = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    
+
     const [activeTab, setActiveTab] = useState('coffee');
     const [isDetail, setIsDetail] = useState(false);
     const [selectedItem, setSelectedItem] = useState({});
     const [cartDetail, setCartDetail] = useState({});
-    const [currCart, setCurrCart] = useState({})
-    
+    const [currCart, setCurrCart] = useState({});
+    const [order, setOrder] = useState()
+
     const productList = useSelector((state) => state.product.productList);
-    
 
     useEffect(() => {
         const cart = JSON.parse(storage.get('currCart'));
         if (cart && cart.cartid) {
-            setCurrCart(cart)
+            setCurrCart(cart);
         }
-    }, [])
+    }, []);
 
     useEffect(() => {
         const defaultParams = {
@@ -40,7 +40,8 @@ const ItemList = () => {
 
     useEffect(() => {
         if (currCart?.cartid) {
-            getCartBySession();
+            const { cartid, orderid } = currCart
+            getCartBySession(cartid, orderid);
         }
     }, [currCart]);
 
@@ -51,12 +52,21 @@ const ItemList = () => {
                 (prod) => prod.categorycodes === 'COFFEE',
             ),
         },
-        { category: 'drinks', items: [] }, // Add drink items here
-        { category: 'snacks', items: [] }, // Add snack items here
+        {
+            category: 'drinks',
+            items: productList.filter(
+                (prod) => prod.categorycodes === 'DRINKS',
+            ),
+        }, // Add drink items here
+        {
+            category: 'snacks',
+            items: productList.filter(
+                (prod) => prod.categorycodes === 'SNACKS',
+            ),
+        }, // Add snack items here
     ];
 
-    const getCartBySession = () => {
-        const { cartid, orderid } = currCart;
+    const getCartBySession = (cartid, orderid) => {
 
         const config = {
             method: 'get',
@@ -85,23 +95,38 @@ const ItemList = () => {
         setSelectedItem(item);
     };
 
-    const handleAddItem = () => {
+    const handleAddItem = (order) => {
+        const {cartid, orderid} = currCart
         setIsDetail(false);
         setSelectedItem({});
+        setOrder(order)
+        getCartBySession(cartid, orderid)
     };
 
     const handleViewCart = () => {
         navigate('/confirm-order', { replace: true });
     };
 
+    const checkCartValue = () => {
+        if ((order && order.orderid) || (currCart && currCart.cartid)) {
+            return true
+        }
+        return false
+    }
+
     const productListing = () => (
-        <div className="col-lg-6 col-md-12 menu-container">
-            <nav className="menu-tabs">
+        <div
+            className="col-lg-6 col-md-12 bg-white"
+        >
+            <div className='menu-container flex flex-column'>
+            <nav className="menu-tabs pt-2">
                 <ul>
                     {menuItems.map((menu, index) => (
                         <li
                             key={index}
-                            className={activeTab === menu.category ? 'active' : ''}
+                            className={
+                                activeTab === menu.category ? 'active' : ''
+                            }
                             onClick={() => setActiveTab(menu.category)}
                         >
                             {menu.category}
@@ -110,36 +135,43 @@ const ItemList = () => {
                 </ul>
             </nav>
             <div className="menu-content">
-                {menuItems.find((menu) => menu.category === activeTab)?.items.map((item, index) => (
-                    <div
-                        className="menu-item p-2 cursor-pointer"
-                        key={index}
-                        onClick={() => handleSelectedItem(item)}
-                    >
-                        <img
-                            src={getImage(item)}
-                            alt={item.name}
-                            className="menu-item-image"
-                        />
-                        <div className="menu-item-details">
-                            <h3>{item.additionalfields.title}</h3>
-                            <span className="menu-item-price">
-                                {item.baseprice}.000
-                            </span>
+                {menuItems
+                    .find((menu) => menu.category === activeTab)
+                    ?.items.map((item, index) => (
+                        <div
+                            className="menu-item p-2 cursor-pointer"
+                            key={index}
+                            onClick={() => handleSelectedItem(item)}
+                        >
+                            <img
+                                src={getImage(item)}
+                                alt={item.name}
+                                className="menu-item-image"
+                            />
+                            <div className="menu-item-details">
+                                <h3>{item.additionalfields.title}</h3>
+                                <p className="mb-4">
+                                    {item.articlefields.description}
+                                </p>
+                                <span className="menu-item-price">
+                                    {item.baseprice}.000
+                                </span>
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    ))}
             </div>
-            {currCart && (
+            {checkCartValue() && (
                 <div
-                className="add-to-order flex align-items-center justify-content-between px-2"
-                onClick={handleViewCart}
-            >
-                <span>{cartDetail.itemcount} item</span>
-                <span>View Cart</span>
-                <span>₱ {cartDetail.totalamount}</span>
-            </div>
+                    className="col-lg-6 col-md-12 add-to-order flex align-items-center justify-content-between px-4"
+                    onClick={handleViewCart}
+                    style={{ marginTop: 'auto' }}
+                >
+                    <span>{cartDetail.itemcount} item</span>
+                    <span>View Cart</span>
+                    <span>₱ {cartDetail.totalamount}</span>
+                </div>
             )}
+            </div>
             
         </div>
     );
@@ -170,12 +202,12 @@ const ProductDetail = ({ selectedItem, handleAddItem }) => {
     };
 
     const handleAdd = () => {
-        currCart?.cartid ? addItem() : createCart();
+        currCart?.cartid ? addItem(currCart) : createCart();
     };
 
-    const addItem = () => {
+    const addItem = (cart) => {
         const { productpricecode } = selectedItem;
-        const { orderid, cartid } = currCart;
+        const { orderid, cartid } = cart;
 
         const data = JSON.stringify({
             orderid,
@@ -194,14 +226,14 @@ const ProductDetail = ({ selectedItem, handleAddItem }) => {
                 Authorization: 'test',
                 'Content-Type': 'application/json',
             },
-            data,
+            data
         };
 
         axios
             .request(config)
             .then((response) => {
                 console.log(JSON.stringify(response.data));
-                handleAddItem();
+                handleAddItem(response.data);
             })
             .catch((error) => console.log(error));
     };
@@ -211,8 +243,9 @@ const ProductDetail = ({ selectedItem, handleAddItem }) => {
             storeid: '1020',
             language: 'en',
             qno: 'Y',
-            signonid: '0ba4b9fabdf34eb32e68188413fc66b38067b28edb6fada74423e7c6e5c845f1',
-            terminalid: '2',
+            signonid:
+                '0f415593c03a3c45a5781179e5709305c30db3f90b95bbe75fba8082867ccbb0',
+            terminalid: '1',
         });
 
         const config = {
@@ -231,6 +264,7 @@ const ProductDetail = ({ selectedItem, handleAddItem }) => {
             .then((response) => {
                 storage.set('currCart', JSON.stringify(response.data));
                 console.log(JSON.stringify(response.data));
+                addItem(response.data);
             })
             .catch((error) => console.log(error));
     };
@@ -253,12 +287,21 @@ const ProductDetail = ({ selectedItem, handleAddItem }) => {
                 </div>
                 <div className="flex flex-column mt-auto">
                     <div className="quantity-selector">
-                        <button onClick={() => setQuantity(quantity > 1 ? quantity - 1 : 1)}>-</button>
+                        <button
+                            onClick={() =>
+                                setQuantity(quantity > 1 ? quantity - 1 : 1)
+                            }
+                        >
+                            -
+                        </button>
                         <span>{quantity}</span>
-                        <button onClick={() => setQuantity(quantity + 1)}>+</button>
+                        <button onClick={() => setQuantity(quantity + 1)}>
+                            +
+                        </button>
                     </div>
-                    <button className="add-to-order" onClick={handleAdd}>
-                        add to order ₱ {(selectedItem.baseprice * quantity).toFixed(3)}
+                    <button className="add-item w-full" onClick={handleAdd}>
+                        add to order ₱{' '}
+                        {(selectedItem.baseprice * quantity).toFixed(3)}
                     </button>
                 </div>
             </div>
