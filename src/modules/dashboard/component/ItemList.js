@@ -244,7 +244,7 @@ const ProductDetail = ({ selectedItem, handleAddItem }) => {
             language: 'en',
             qno: 'Y',
             signonid:
-                '0f415593c03a3c45a5781179e5709305c30db3f90b95bbe75fba8082867ccbb0',
+                'a9362bbca0f378d2db96acbb2afb66a2afc85765faeed143476939e56c9cfa2b',
             terminalid: '1',
         });
 
