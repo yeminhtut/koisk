@@ -1,0 +1,24 @@
+{
+  "files": {
+    "main.css": "/yeminhtut/koisk/static/css/main.fd7fc9e2.css",
+    "main.js": "/yeminhtut/koisk/static/js/main.f1e28ee5.js",
+    "static/media/touch-bg.png": "/yeminhtut/koisk/static/media/touch-bg.c7502b28c8060a4049bf.png",
+    "static/media/primeicons.svg": "/yeminhtut/koisk/static/media/primeicons.c6e2053303524e39530c.svg",
+    "static/media/Inter-italic.var.woff2?v=3.19": "/yeminhtut/koisk/static/media/Inter-italic.var.30807be7abc48ba8c73c.woff2",
+    "static/media/Inter-roman.var.woff2?v=3.19": "/yeminhtut/koisk/static/media/Inter-roman.var.ba4caefcdf5b36b438db.woff2",
+    "static/media/primeicons.eot": "/yeminhtut/koisk/static/media/primeicons.7fc4d8e224d1ff1b9c62.eot",
+    "static/media/primeicons.woff": "/yeminhtut/koisk/static/media/primeicons.449aa8c65cdc5c2a8686.woff",
+    "static/media/primeicons.ttf": "/yeminhtut/koisk/static/media/primeicons.91bacab1f083f2795272.ttf",
+    "static/media/toshiba-01.svg": "/yeminhtut/koisk/static/media/toshiba-01.ff6ff68b42b6bb44afe3c2bb4fa15d62.svg",
+    "index.html": "/yeminhtut/koisk/index.html",
+    "static/media/ic_menu_dark.svg": "/yeminhtut/koisk/static/media/ic_menu_dark.9fcd969f5ae501507a7f.svg",
+    "static/media/ic_menu_close_dark.svg": "/yeminhtut/koisk/static/media/ic_menu_close_dark.59940cde71b728bf22b9.svg",
+    "static/media/ic_dropdown1.svg": "/yeminhtut/koisk/static/media/ic_dropdown1.3bdcb17d4e571dfa9cc1.svg",
+    "main.fd7fc9e2.css.map": "/yeminhtut/koisk/static/css/main.fd7fc9e2.css.map",
+    "main.f1e28ee5.js.map": "/yeminhtut/koisk/static/js/main.f1e28ee5.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.fd7fc9e2.css",
+    "static/js/main.f1e28ee5.js"
+  ]
+}
