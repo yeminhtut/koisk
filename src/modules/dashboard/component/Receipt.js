@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
-import storage from '../../../utils/storage';
+import { useNavigate } from 'react-router';
 import axios from 'axios';
+import storage from '../../../utils/storage';
 
 const OrderConfirmation = (props) => {
     const { orderNumber } = props;
@@ -18,6 +19,8 @@ const OrderConfirmation = (props) => {
     var socket = null;
     let deviceid = 'solution-kds';
 
+    const navigate = useNavigate()
+
     useEffect(() => {
         const cart = JSON.parse(storage.get('currCart')) || {}
         const { cartid, orderid } = cart
@@ -26,7 +29,15 @@ const OrderConfirmation = (props) => {
         }
     }, []);
 
-    //console.log('props')
+    useEffect(() => {
+        if (trxno) {
+            const timer = setTimeout(() => {
+                navigate('/item-listing', { replace: true });
+            }, 3000); // 3 seconds for demo
+
+            return () => clearTimeout(timer); // Cleanup the timer
+        }
+    }, [navigate, trxno]); // Only run effect when navigate or trxno changes
 
     const getData = (cartid, orderid) => {
         let config = {
@@ -103,7 +114,6 @@ const OrderConfirmation = (props) => {
                             socket !== null &&
                             socket.readyState === WebSocket.OPEN
                         ) {
-                            console.log('debug message', sentMessage)
                             socket.send(sentMessage);
                         }
                     }, 2000);
@@ -142,8 +152,6 @@ const OrderConfirmation = (props) => {
         ReceiptResponse.extras = {};
         ReceiptResponse.receiptref = null;
 
-        console.log("getPrinterConfigData cart::"+JSON.stringify(cart));
-
         if (getPrinterConfigData() != null) {
             var virtualprinter =
                 getPrinterConfigData().virtualprinter == 'Y' ? true : false;
@@ -171,7 +179,6 @@ const OrderConfirmation = (props) => {
             ReceiptResponse.receiptfooter = {};
             ReceiptResponse.store_birinfo = receiptStoreBIRInfoData();
             ReceiptResponse.terminal_birinfo = receiptTerminalBIRInfoData()
-            console.log('ReceiptResponse::' + JSON.stringify(ReceiptResponse));
             let message = {};
             message.receipt = ReceiptResponse.elevateCartResponse;
             message.header = ReceiptResponse.receiptheader;
