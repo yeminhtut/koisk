@@ -14,6 +14,7 @@ const WelcomeComponent = () => {
     useEffect(() => {
         dispatch(appActions.STORE_GET_REQUEST(storeid));
         fetchData();
+        storage.set('session', 'test')
     }, [dispatch]);
 
     const fetchData = async () => {

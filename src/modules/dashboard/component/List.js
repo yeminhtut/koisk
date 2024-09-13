@@ -4,11 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import appActions from '../../../appActions';
 import storage from '../../../utils/storage';
+import ImageIcon from '../../../components/ImageIcon';
 
 const URL = window?.config?.END_POINT;
 const storeid = window?.config?.storeid;
+const terminalid = window?.config?.terminalid;
 
-const ItemList = () => {
+const PList = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
@@ -51,27 +53,6 @@ const ItemList = () => {
         }
     }, [currCart]);
 
-    const menuItems = [
-        {
-            category: 'coffee',
-            items: productList.filter(
-                (prod) => prod.categorycodes === 'COFFEE',
-            ),
-        },
-        {
-            category: 'drinks',
-            items: productList.filter(
-                (prod) => prod.categorycodes === 'DRINKS',
-            ),
-        },
-        {
-            category: 'snacks',
-            items: productList.filter(
-                (prod) => prod.categorycodes === 'SNACKS' || prod.categorycodes === 'COFFEE',
-            ),
-        },
-    ];
-
     const getCartBySession = (cartid, orderid, sessionid) => {
         const config = {
             method: 'get',
@@ -111,10 +92,31 @@ const ItemList = () => {
 
     const checkCartValue = () => !!(order?.orderid || currCart?.cartid);
 
-    const productListing = () => (
-        <div className="col-lg-6 col-md-12 bg-white">
-            <div className="menu-container flex flex-column">
-                <nav className="menu-tabs pt-2">
+    const menuItems = [
+        {
+            category: 'coffee',
+            items: productList.filter(
+                (prod) => prod.categorycodes === 'COFFEE',
+            ),
+        },
+        {
+            category: 'drinks',
+            items: productList.filter(
+                (prod) => prod.categorycodes === 'DRINKS',
+            ),
+        },
+        {
+            category: 'snacks',
+            items: productList.filter(
+                (prod) => prod.categorycodes === 'SNACKS',
+            ),
+        },
+    ];
+
+    const productListing = () => {
+        return (
+            <div className="menu-area">
+                <div className="menu-tabs">
                     <ul>
                         {menuItems.map((menu, index) => (
                             <li
@@ -128,8 +130,8 @@ const ItemList = () => {
                             </li>
                         ))}
                     </ul>
-                </nav>
-                <div className="menu-content">
+                </div>
+                <div className="menu-items">
                     {menuItems
                         .find((menu) => menu.category === activeTab)
                         ?.items.map((item, index) => (
@@ -157,9 +159,8 @@ const ItemList = () => {
                 </div>
                 {(checkCartValue() || cartDetail?.cartid) && (
                     <div
-                        className="col-lg-6 col-md-12 add-to-order flex align-items-center justify-content-between px-4"
+                        className="cart-summary sticky-cart-summary add-to-order flex align-items-center justify-content-between px-4"
                         onClick={handleViewCart}
-                        style={{ marginTop: 'auto' }}
                     >
                         <span>{cartDetail.itemcount} item</span>
                         <span>View Cart</span>
@@ -167,27 +168,40 @@ const ItemList = () => {
                     </div>
                 )}
             </div>
-        </div>
-    );
+        );
+    };
+
+    const handleClose = () => setIsDetail(false)
 
     return (
-        <div className="flex fullHeight">
-            <div className="col-6 d-none d-md-block col-6 leftSpace"></div>
-            {isDetail ? (
-                <ProductDetail
-                    selectedItem={selectedItem}
-                    handleAddItem={handleAddItem}
-                    currCart={currCart}
+        <div className="flex" style={{ height: '100vh' }}>
+            <div className="sticky-image-area col-6 d-none d-md-block">
+                <img
+                    src="http://tgcs-dev4.tgcs-elevate.com:9000/media/koisk_adv.jpg"
+                    alt="Coffee"
+                    className="sticky-image"
                 />
+            </div>
+            {isDetail ? (
+                <div className="menu-area">
+                    <ProductDetail
+                        selectedItem={selectedItem}
+                        handleAddItem={handleAddItem}
+                        currCart={currCart}
+                        handleClose={handleClose}
+                    />
+                </div>
             ) : (
-                productListing()
+                <div className="menu-area">{productListing()}</div>
             )}
         </div>
     );
 };
 
-const ProductDetail = ({ selectedItem, handleAddItem, currCart }) => {
+const ProductDetail = ({ selectedItem, handleAddItem, currCart, handleClose }) => {
     const [quantity, setQuantity] = useState(1);
+
+    const handleCloseDetail = () => handleClose()
 
     const getImage = () =>
         selectedItem.images
@@ -225,7 +239,7 @@ const ProductDetail = ({ selectedItem, handleAddItem, currCart }) => {
             language: 'en',
             qno: 'Y',
             signonid: storage.get('signonid'),
-            terminalid: '1',
+            terminalid: terminalid,
         });
 
         axios
@@ -245,42 +259,57 @@ const ProductDetail = ({ selectedItem, handleAddItem, currCart }) => {
     };
 
     return (
-        <div className="product-detail-container col-lg-6 col-md-12">
-            <div className="flex flex-column h-full">
-                <div
-                    style={{
-                        backgroundImage: `url(${getImage()})`,
-                        height: '300px',
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                    }}
-                ></div>
-                <div className="item-info p-4">
-                    <h2>{selectedItem.additionalfields.title}</h2>
-                    <p>{selectedItem.articlefields.description}</p>
-                </div>
-                <div className="flex flex-column mt-auto">
-                    <div className="quantity-selector">
-                        <button
-                            onClick={() =>
-                                setQuantity(quantity > 1 ? quantity - 1 : 1)
-                            }
-                        >
-                            -
-                        </button>
-                        <span>{quantity}</span>
-                        <button onClick={() => setQuantity(quantity + 1)}>
-                            +
-                        </button>
-                    </div>
-                    <button className="add-item w-full" onClick={handleAdd}>
-                        Add to order ₱{' '}
-                        {(selectedItem.baseprice * quantity).toFixed(3)}
+        <div className="flex flex-column h-full">
+            <MenuItem label={selectedItem.additionalfields.title} imgSrc={getImage()} handleCloseDetail={handleCloseDetail} />
+            {/* <div
+                style={{
+                    backgroundImage: `url(${getImage()})`,
+                    height: '300px',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                }}
+            >
+                <ImageIcon iconName={'close.png'} style={{ width: '30px', height: '30px' }} />
+            </div> */}
+            <div className="item-info p-4">
+                <h2>{selectedItem.additionalfields.title}</h2>
+                <p>{selectedItem.articlefields.description}</p>
+            </div>
+            <div className="flex flex-column mt-auto">
+                <div className="quantity-selector">
+                    <button
+                        onClick={() =>
+                            setQuantity(quantity > 1 ? quantity - 1 : 1)
+                        }
+                    >
+                        -
                     </button>
+                    <span>{quantity}</span>
+                    <button onClick={() => setQuantity(quantity + 1)}>+</button>
                 </div>
+                <button className="add-item w-full" onClick={handleAdd}>
+                    Add to order ₱{' '}
+                    {(selectedItem.baseprice * quantity).toFixed(3)}
+                </button>
             </div>
         </div>
     );
 };
 
-export default ItemList;
+const MenuItem = ({ label, imgSrc, handleCloseDetail }) => {
+    return (
+      <div className="menu-item">
+        <div className="menu-item-left">
+            <div onClick={handleCloseDetail}>
+                <ImageIcon iconName={'close.png'} style={{ width: '20px', height: '20px' }} />
+            </div>
+          <label htmlFor={label} className="menu-item-label">
+            {label}
+          </label>
+        </div>
+        <img src={imgSrc} alt={label} style={{ width: '80px', height: '80px'}} />
+      </div>
+    );
+  };
+
+export default PList;

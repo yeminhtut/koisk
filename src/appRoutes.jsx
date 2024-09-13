@@ -9,6 +9,8 @@ import Setting from './modules/dashboard/component/Setting';
 import WelcomeContainer from './modules/welcome/container/WelcomeContainer';
 import ItemList from './modules/dashboard/component/ItemList';
 import OrderConfirmation from './modules/dashboard/component/Receipt';
+import PList from './modules/dashboard/component/List';
+import ProductList from './modules/dashboard/component/ProductList';
 
 const AuthRequiredContainer = () => {
     return (
@@ -31,7 +33,8 @@ const AppRoutes = () => (
             <Route path="/" element={<WelcomeContainer />} />
             <Route path="/confirm-order" element={<ConfirmOrder />} />
             <Route path="/setting" element={<Setting />} />
-            <Route path="/item-listing" element={<ItemList />} />
+            <Route path="/item-listing" element={<ProductList />} />
+            <Route path="/p-listing" element={<PList />} />
             <Route path="/payment-success" element={<OrderConfirmation />} />
             <Route element={<AuthRequiredContainer />} path="/ui/*" />
         </Routes>

@@ -5,6 +5,7 @@ import { Button } from 'primereact/button';
 import storage from '../../../utils/storage';
 import ImageIcon from '../../../components/ImageIcon';
 import OrderConfirmation from './Receipt';
+import AdsArea from './AdsArea';
 
 const URL = window?.config?.END_POINT;
 const terminalid = window?.config?.terminalid;
@@ -146,7 +147,9 @@ const ConfirmOrder = () => {
     };
 
     const CartView = () => (
-        <div className="p-4" style={{ maxWidth: '768px', margin: '0 auto' }}>
+        <div className="flex" style={{ height: '100vh' }}>
+            <AdsArea />
+            <div className="p-4 w-full">
             <div className="flex align-items-center justify-content-between mb-4">
                 <div onClick={handleBack}>
                     <ImageIcon iconName={'back_arrow.png'} style={{ width: '30px', height: '30px' }} />
@@ -177,13 +180,15 @@ const ConfirmOrder = () => {
                 </div>
             </div>
             <div
-                className="w-full flex align-items-center justify-content-center fixed right-0 bottom-0 p-4 cursor-pointer"
+                className="w-full flex align-items-center justify-content-center fixed right-0 bottom-0 p-4 cursor-pointer col-md-12 col-lg-6"
                 style={{ backgroundColor: '#78838E', color: '#FFF', fontSize: '32px' }}
                 onClick={handlePayment}
             >
-                Place Order P{cartDetail.totalamount}
+                Place Order P{cartDetail.totalamount}.000
             </div>
         </div>
+        </div>
+        
     );
 
     return !isSuccess ? <CartView /> : <OrderConfirmation orderNumber={orderNumber} handleBack={handleBack} />;
@@ -204,11 +209,12 @@ const OrderItem = ({ item, removeOrderItem, increaseOrderItem, decreaseOrderItem
         }
     };
 
-    return (
-        <div className="flex mb-4 align-items-center">
+    const cartArea = () => {
+        return (
+            <div className="flex mb-4 align-items-center">
             <div className="col">
-                <h4 className="m-0">{item.name}</h4>
-                <p className="m-0">{item.description}</p>
+                <h4 className="m-0 text-xl">{item.description}</h4>
+                {/* <p className="m-0">{item.description}</p> */}
             </div>
             <div className="col">
                 <div className="order-selector flex justify-content-center align-items-center my-2">
@@ -222,6 +228,14 @@ const OrderItem = ({ item, removeOrderItem, increaseOrderItem, decreaseOrderItem
                 <Button label="Remove" onClick={() => removeOrderItem(item)} severity="danger" text />
             </div>
         </div>
+        )
+    }
+
+    return (
+        <>
+            {cartArea()}
+        </>
+        
     );
 };
 
