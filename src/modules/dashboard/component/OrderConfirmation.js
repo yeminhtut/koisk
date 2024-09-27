@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import axios from 'axios';
+import AdsArea from './AdsArea';
 import storage from '../../../utils/storage';
 
 const OrderConfirmation = (props) => {
@@ -20,6 +21,7 @@ const OrderConfirmation = (props) => {
     let deviceid = 'solution-kds';
 
     const navigate = useNavigate()
+    const [countdown, setCountdown] = useState(10); 
 
     useEffect(() => {
         const cart = JSON.parse(storage.get('currCart')) || {}
@@ -31,11 +33,25 @@ const OrderConfirmation = (props) => {
 
     useEffect(() => {
         if (trxno) {
-            const timer = setTimeout(() => {
-                navigate('/item-listing', { replace: true });
-            }, 3000); // 3 seconds for demo
+            // const timer = setTimeout(() => {
+            //     navigate('/', { replace: true });
+            // }, 10000); // 10 seconds for demo
 
-            return () => clearTimeout(timer); // Cleanup the timer
+            // return () => clearTimeout(timer); // Cleanup the timer
+            const intervalId = setInterval(() => {
+                setCountdown(prev => prev - 1);
+            }, 1000); // Every 1 second
+
+            // Set timeout to navigate after 10 seconds
+            const timer = setTimeout(() => {
+                navigate('/', { replace: true });
+            }, 10000); // 10 seconds
+
+            // Cleanup interval and timeout on component unmount or trxno change
+            return () => {
+                clearInterval(intervalId);
+                clearTimeout(timer);
+            };
         }
     }, [navigate, trxno]); // Only run effect when navigate or trxno changes
 
@@ -211,7 +227,9 @@ const OrderConfirmation = (props) => {
     };
 
     return (
-        <div className="order-confirmation-container">
+        <div className="flex" style={{ height: '100vh' }}>
+            <AdsArea />
+            <div className="order-confirmation-container p-4 w-full">
             <div className="text-content">
                 <h1 className="main-heading">all done. enjoy your coffee!</h1>
                 <p className="sub-heading">
@@ -223,6 +241,9 @@ const OrderConfirmation = (props) => {
                 <p>order number:</p>
                 <h2>#{trxno}</h2>
             </div>
+            <div class="text-center text-white text-xl">Redirecting in 
+               <span id="countdown mx-2"> {countdown}</span> seconds or click home to proceed. 
+            </div>
             <div className="receipt-icon">
                 <div
                     className="justify-content-center align-items-center p-4 cursor-pointer"
@@ -233,6 +254,8 @@ const OrderConfirmation = (props) => {
                 </div>
             </div>
         </div>
+        </div>
+        
     );
 };
 

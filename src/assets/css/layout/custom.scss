@@ -21,7 +21,6 @@
     justify-content: center;
     align-items: center;
     height: 100vh;
-    background-image: url('/assets/icons/touch-bg.png');
     position: relative;
     background-size: cover;
     background-position: center;
@@ -29,7 +28,7 @@
   
   .layer {
     background-color: #78838E;
-    opacity: 0.9;
+    opacity: 0.7;
     position: absolute;
     top: 0;
     left: 0;
@@ -484,7 +483,7 @@ font-weight: 300;
 }
 
 .sticky-image-area {
-  flex: 1;
+  // flex: 1;
   position: sticky;
   top: 0;
 }

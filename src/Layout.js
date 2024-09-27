@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import Sidebar from './components/Sidebar'
 import Header from './components/Header';
-import "./assets/css/layout/layout.scss";
+import AdsArea from './modules/dashboard/component/AdsArea';
 
 const Layout = props => {
     const { children } = props

@@ -1,15 +1,17 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import appActions from '../../../appActions';
 import storage from '../../../utils/storage';
+import TouchImage from '../../../assets/icons/touch-bg.png'
 
 const { END_POINT: URL, terminalid, storeid, AuthorizationHeader } = window?.config || {};
 
 const WelcomeComponent = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
+    const [bgImg , setBgImg] = useState('')
 
     useEffect(() => {
         dispatch(appActions.STORE_GET_REQUEST(storeid));
@@ -23,10 +25,39 @@ const WelcomeComponent = () => {
             await getPrinterConfig();
             await getTerminalBirInfo();
             await getBirInfo();
+            await getImage();
         } catch (error) {
             console.error("Error fetching data", error);
         }
     };
+
+    const getImage = () => {
+        let config = {
+            method: 'get',
+            url: `${URL}/system/v1/store/tag/search/fields?taggroup=storeprops&tagtype=storeprops&storeid=${storeid}&pagesize=10&pageno=1`,
+            headers: { 
+                'Authorization': '7550935cd2bc97f0307afb2aa204e245',
+                'Content-Type': 'application/json', 
+            }
+        };
+
+        axios.request(config)
+        .then((response) => {
+            if (response.status === 200 && response.data.length > 0) {
+                const { additionalfields } = response.data[0]
+                const { sco } = additionalfields
+                if (sco) {
+                    const { start_page } = JSON.parse(sco)
+                    setBgImg(start_page ? start_page : TouchImage )
+                }
+                
+            }
+        })
+        .catch((error) => {
+            console.log(error);
+        });
+
+    }
 
     const getSignOnId = async () => {
         const config = {
@@ -126,7 +157,7 @@ const WelcomeComponent = () => {
     };
 
     return (
-        <div className="background">
+        <div className="background cursor-pointer"  onClick={handleClick} style={{ backgroundImage: `url(${bgImg})` }}>
             <div className="layer"></div>
             <div className="flex flex-column justify-center" style={{ zIndex: 1 }}>
                 <div className="mb-8 flex justify-center">
@@ -137,7 +168,7 @@ const WelcomeComponent = () => {
                     />
                 </div>
                 <div>
-                    <button className="start-button" style={{ width: '400px' }} onClick={handleClick}>
+                    <button className="start-button" style={{ width: '400px' }}>
                         touch to start
                     </button>
                 </div>

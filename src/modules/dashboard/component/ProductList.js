@@ -240,7 +240,6 @@ const ProductDetail = ({
         axios
             .request(config)
             .then((response) => {
-                console.log('data is', response.data)
                 const addOnList = groupAddon(response.data);
                 setProductAddon(addOnList);
             })
@@ -274,7 +273,6 @@ const ProductDetail = ({
                 quantity: quantity,
             }));
         }
-        console.log('add ons', data);
 
         const payloadData = JSON.stringify(data);
 
