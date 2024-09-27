@@ -128,7 +128,6 @@ const ConfirmOrder = () => {
                 maxBodyLength: Infinity,
             });
             const { sessionid } = repsonse.data
-            console.log('data', repsonse.data)
             storage.set('sessionid', sessionid)
             fetchCartDetails(sessionid);
         } catch (error) {
