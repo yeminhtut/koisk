@@ -28,7 +28,7 @@
   
   .layer {
     background-color: #78838E;
-    opacity: 0.7;
+    opacity: 0;
     position: absolute;
     top: 0;
     left: 0;
@@ -357,6 +357,7 @@ font-weight: 300;
 }
 
 .menu-tabs li {
+  text-transform: capitalize;
   padding: 10px;
   cursor: pointer;
 }
@@ -546,6 +547,23 @@ font-weight: 300;
 
 .ad-image.fade-out {
   opacity: 0;
+}
+
+.payment-option {
+  border: 2px solid #ccc;
+  padding: 20px;
+  width: 150px;
+  text-align: center;
+  cursor: pointer;
+  font-size: 18px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.payment-option.selected {
+  border-color: #007bff; /* Highlighted color when selected */
+  background-color: #f0f8ff; /* Light background when selected */
+  color: #007bff;
 }
 
 

@@ -10,9 +10,10 @@ function* watchProductGetAllRequest() {
     yield takeLatest(
         appActions.PRODUCT_GET_ALL_REQUEST.type,
         function* (action) {
+            const { categorycodes, storeid} = action.payload
             yield* querySaga(
                 action,
-                '/sales/v1/product-search/fields?categorycodes=CAFE01&language=en&pageno=1&pagesize=100&segment=T1&sort=sortorder&status=Active&stopsell=N&storeid=1020',
+                `/sales/v1/product-search/fields?categorycodes=${categorycodes}&language=en&pageno=1&pagesize=100&segment=T1&sort=sortorder&status=Active&stopsell=N&storeid=${storeid}`,
                 appActions.PRODUCT_GET_ALL_SUCCESS,
                 appActions.PRODUCT_GET_ALL_FAILURE,
             );

@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { RadioButton } from 'primereact/radiobutton';
+import { Checkbox } from 'primereact/checkbox';
 import { Divider } from 'primereact/divider';
 import appActions from '../../../appActions';
 import storage from '../../../utils/storage';
@@ -10,7 +11,7 @@ import ImageIcon from '../../../components/ImageIcon';
 import AdsArea from './AdsArea';
 
 const URL = window?.config?.END_POINT;
-const storeid = window?.config?.storeid;
+const storeid = storage.get('storeid')
 const terminalid = window?.config?.terminalid;
 
 const ProductList = () => {
@@ -23,6 +24,11 @@ const ProductList = () => {
     const [cartDetail, setCartDetail] = useState({});
     const [currCart, setCurrCart] = useState({});
     const [order, setOrder] = useState();
+    const [productGroups, setProductGroups] = useState()
+    const [menuItems, setMenuItems] = useState([])
+
+    
+    // const terminalid = storage.get('terminalid')
 
     const productList = useSelector((state) => state.product.productList);
 
@@ -43,6 +49,7 @@ const ProductList = () => {
             sort: 'sortorder',
             status: 'Active',
             storeid: storeid,
+            categorycodes: storage.get('categoryCode')
         };
         dispatch(appActions.PRODUCT_GET_ALL_REQUEST(defaultParams));
     }, [dispatch]);
@@ -56,28 +63,22 @@ const ProductList = () => {
         }
     }, [currCart]);
 
-    const menuItems = [
-        {
-            category: 'coffee',
-            items: productList.filter(
-                (prod) => prod.categorycodes === 'COFFEE',
-            ),
-        },
-        {
-            category: 'drinks',
-            items: productList.filter(
-                (prod) => prod.categorycodes === 'DRINKS',
-            ),
-        },
-        {
-            category: 'snacks',
-            items: productList.filter(
-                (prod) =>
-                    prod.categorycodes === 'SNACKS' ||
-                    prod.categorycodes === 'COFFEE',
-            ),
-        },
-    ];
+    useEffect(() => {
+       const uniqueProductGroups = [...new Set(productList.map(product => product.productgroup))];
+       setProductGroups(uniqueProductGroups)
+       const result = uniqueProductGroups.map(product => {
+        return (
+                {
+                    category: product,
+                    items: productList.filter(
+                        (prod) => prod.productgroup === product
+                    )
+                }
+            )
+       })
+       setMenuItems(result)
+       setActiveTab(uniqueProductGroups[0])
+    }, [productList])
 
     const getCartBySession = (cartid, orderid, sessionid) => {
         const config = {
@@ -181,7 +182,7 @@ const ProductList = () => {
     };
 
     return (
-        <div className="flex" style={{ height: '100vh' }}>
+        <div className="flex" style={{ minHeight: '100vh' }}>
             <AdsArea />
             <div className="menu-area">
                 <div className="menu-items">
@@ -191,18 +192,12 @@ const ProductList = () => {
                             handleAddItem={handleAddItem}
                             currCart={currCart}
                             handleClose={handleClose}
+                            setCurrCart={setCurrCart}
                         />
                     ) : (
                         productListing()
                     )}
                 </div>
-                {/* {(checkCartValue() || cartDetail?.cartid) && (
-                    <div className="cart-summary sticky-cart-summary">
-                        <span>{cartItems} item</span>
-                        <span>View Cart</span>
-                        <span>₱ {totalAmount}</span>
-                    </div>
-                )} */}
             </div>
         </div>
     );
@@ -213,11 +208,10 @@ const ProductDetail = ({
     handleAddItem,
     currCart,
     handleClose,
+    setCurrCart
 }) => {
     const { productpricecode } = selectedItem;
     const [quantity, setQuantity] = useState(1);
-    const [beanPreference, setBeanPreference] = useState(null);
-    const [temperatureSize, setTemperatureSize] = useState(null);
 
     const [productAddons, setProductAddon] = useState([]);
 
@@ -230,7 +224,7 @@ const ProductDetail = ({
     const getProductAddOn = () => {
         const config = {
             method: 'get',
-            url: `${URL}/sales/v1/product-search/productpricecode/${productpricecode}?storeid=1020&status=Active&language=en`,
+            url: `${URL}/sales/v1/product-search/productpricecode/${productpricecode}?storeid=${storeid}&status=Active&language=en`,
             headers: {
                 Authorization: 'test',
                 'Content-Type': 'application/json',
@@ -283,7 +277,16 @@ const ProductDetail = ({
                     'Content-Type': 'application/json',
                 },
             })
-            .then((response) => handleAddItem(response.data, cartid))
+            .then((response) => {
+                if (response.status == 200) {
+                    handleAddItem(response.data, cartid)
+                }
+                // else {
+                //     toast.current.show({ severity: 'info', summary: 'Info', detail: response.data.message }); 
+                // }
+                console.log('wrong in here', response)
+                
+            })
             .catch((error) => console.error(error));
     };
 
@@ -294,6 +297,7 @@ const ProductDetail = ({
             qno: 'Y',
             signonid: storage.get('signonid'),
             terminalid: terminalid,
+            saleschannel: "dxpkiosk"
         });
 
         axios
@@ -308,11 +312,12 @@ const ProductDetail = ({
                 const { sessionid } = response.data;
                 storage.set('sessionid', sessionid);
                 addItem(response.data);
+                setCurrCart(response.data)
             })
             .catch((error) => console.error(error));
     };
 
-    function GetSortOrder(prop) {
+    const GetSortOrder = (prop) => {
         return function (a, b) {
             if (a[prop] > b[prop]) {
                 return 1;
@@ -362,12 +367,25 @@ const ProductDetail = ({
 
     const [selectedOptions, setSelectedOptions] = useState({});
 
-    const handleOptionChange = (groupId, value) => {
-        setSelectedOptions({
-            ...selectedOptions,
-            [groupId]: value,
+    const handleOptionChange = (addon, checked, productpricecode) => {
+        setSelectedOptions((prevSelectedOptions) => {
+            const selected = prevSelectedOptions[addon] || [];
+            if (checked) {
+                // Add the checked option
+                return {
+                    ...prevSelectedOptions,
+                    [addon]: [...selected, productpricecode],
+                };
+            } else {
+                // Remove the unchecked option
+                return {
+                    ...prevSelectedOptions,
+                    [addon]: selected.filter((code) => code !== productpricecode),
+                };
+            }
         });
     };
+    
 
     return (
         <div className="flex flex-column h-full">
@@ -387,7 +405,7 @@ const ProductDetail = ({
                         <h4>{group.addgroup.title}</h4>
                         {group.addons.map((option) => (
                             <div key={option.id} className="field-radiobutton">
-                                <RadioButton
+                                {/* <RadioButton
                                     inputId={`${group.addon}_${option.id}`}
                                     name={group.addon}
                                     value={option.productpricecode}
@@ -397,6 +415,17 @@ const ProductDetail = ({
                                     checked={
                                         selectedOptions[group.addon] ===
                                         option.productpricecode
+                                    }
+                                /> */}
+                                <Checkbox
+                                    inputId={`${group.addon}_${option.id}`}
+                                    name={group.addon}
+                                    value={option.productpricecode}
+                                    onChange={(e) =>
+                                        handleOptionChange(group.addon, e.checked, option.productpricecode)
+                                    }
+                                    checked={
+                                        selectedOptions[group.addon]?.includes(option.productpricecode) || false
                                     }
                                 />
                                 <label htmlFor={`${group.addon}_${option.id}`}>
@@ -427,7 +456,7 @@ const ProductDetail = ({
                 >
                     <div className='w-full'>
                         Add to order ₱{' '}
-                        {(selectedItem.baseprice * quantity).toFixed(3)}
+                        {(selectedItem.baseprice * quantity).toFixed(2)}
                     </div>
                 </div>
             </div>

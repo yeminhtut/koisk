@@ -1,8 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router';
-import axios from 'axios';
-import AdsArea from './AdsArea';
-import storage from '../../../utils/storage';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router";
+import axios from "axios";
+import AdsArea from "./AdsArea";
+import storage from "../../../utils/storage";
+
+const {
+    END_POINT: URL,
+    terminalid,
+    storeid,
+    AuthorizationHeader,
+} = window?.config || {};
 
 const OrderConfirmation = (props) => {
     const { orderNumber } = props;
@@ -12,91 +19,80 @@ const OrderConfirmation = (props) => {
         props.handleBack();
     };
     let loginTerminalId = 1;
-    let loginStoreId = 1020;
-    let serviceUrl = 'http://tgcs-dev4.tgcs-elevate.com:9000';
-    let socketUrl = serviceUrl + '/broker/v1/device/client';
-    let AuthorizationHeader =
-        '128j3y65e7d6d6ed4c75011d7ebf97c3de13ecb285a138956646afb2c247ab44603c912758emvldm';
-    var socket = null;
-    let deviceid = 'solution-kds';
+    let loginStoreId = storage.get("storeid");
+    let socketUrl = URL + "/broker/v1/device/client";
+    let socket = null;
+    let deviceid = `kiosk_${storeid}_${terminalid}`;
 
-    const navigate = useNavigate()
-    const [countdown, setCountdown] = useState(10); 
+    const navigate = useNavigate();
+    const [countdown, setCountdown] = useState(10);
 
     useEffect(() => {
-        const cart = JSON.parse(storage.get('currCart')) || {}
-        const { cartid, orderid } = cart
+        const cart = JSON.parse(storage.get("currCart")) || {};
+        const { cartid, orderid } = cart;
         if (cartid) {
-            getData(cartid, orderid)
+            //getData(cartid, orderid);
         }
     }, []);
 
     useEffect(() => {
-        if (trxno) {
-            // const timer = setTimeout(() => {
-            //     navigate('/', { replace: true });
-            // }, 10000); // 10 seconds for demo
+        //if (trxno) {
+        const intervalId = setInterval(() => {
+            setCountdown((prev) => prev - 1);
+        }, 3000);
+        const timer = setTimeout(() => {
+            navigate("/item-listing", { replace: true });
+        }, 30000); // 10 seconds
 
-            // return () => clearTimeout(timer); // Cleanup the timer
-            const intervalId = setInterval(() => {
-                setCountdown(prev => prev - 1);
-            }, 1000); // Every 1 second
-
-            // Set timeout to navigate after 10 seconds
-            const timer = setTimeout(() => {
-                navigate('/', { replace: true });
-            }, 10000); // 10 seconds
-
-            // Cleanup interval and timeout on component unmount or trxno change
-            return () => {
-                clearInterval(intervalId);
-                clearTimeout(timer);
-            };
-        }
-    }, [navigate, trxno]); // Only run effect when navigate or trxno changes
+        return () => {
+            clearInterval(intervalId);
+            clearTimeout(timer);
+        };
+        //}
+    }, [navigate, trxno]);
 
     const getData = (cartid, orderid) => {
         let config = {
-            method: 'get',
+            method: "get",
             maxBodyLength: Infinity,
-            url: `http://tgcs-dev4.tgcs-elevate.com:9000/pos/v1/cart/${cartid}/${orderid}?status=sales`,
-            headers: { 
-              'Authorization': 'test', 
-            }
-          };
-          
-          axios.request(config)
-          .then((response) => {
-            createPrintRequest(response.data)
-          })
-          .catch((error) => {
-            console.log(error);
-          });
-          storage.remove('currCart');
-    }
+            url: `${URL}/pos/v1/cart/${cartid}/${orderid}?status=sales`,
+            headers: {
+                AuthorizationHeader,
+            },
+        };
+
+        axios
+            .request(config)
+            .then((response) => {
+                createPrintRequest(response.data);
+            })
+            .catch((error) => {
+                console.log(error);
+            });
+        storage.remove("currCart");
+    };
 
     const getPrinterConfigData = () => {
-        return localStorage.getItem('printerConfigData') == null
-            ? localStorage.setItem('printerConfigData', null)
-            : JSON.parse(localStorage.getItem('printerConfigData'));
+        return localStorage.getItem("printerConfigData") == null
+            ? localStorage.setItem("printerConfigData", null)
+            : JSON.parse(localStorage.getItem("printerConfigData"));
     };
 
     const registeredDeviceData = () => {
-        return localStorage.getItem('registeredDeviceData') == null
-            ? localStorage.setItem('registeredDeviceData', null)
-            : JSON.parse(localStorage.getItem('registeredDeviceData'));
+        return localStorage.getItem("registeredDeviceData") == null
+            ? localStorage.setItem("registeredDeviceData", null)
+            : JSON.parse(localStorage.getItem("registeredDeviceData"));
     };
 
     const sendPrinterMessage = (data) => {
-        const { message, rqType, rqSubType, append, posid, printerId } =
-            data;
+        const { message, rqType, rqSubType, append, posid, printerId } = data;
 
-        const uId = 'PTR_' + (new Date().getTime() + (append || 0));
+        const uId = "PTR_" + (new Date().getTime() + (append || 0));
         const msgToSend = {
             header: {
                 msgid: uId,
                 to: printerId,
-                from: posid + '-' + loginStoreId + '-' + loginTerminalId,
+                from: posid + "-" + loginStoreId + "-" + loginTerminalId,
                 rqtype: rqType,
                 rqsubtype: rqSubType,
             },
@@ -106,15 +102,15 @@ const OrderConfirmation = (props) => {
         };
 
         //console.log('sendPrinterMessage::' + JSON.stringify(msgToSend));
-        var webSocketRequest = {};
-        webSocketRequest.status = 'Active';
+        let webSocketRequest = {};
+        webSocketRequest.status = "Active";
         webSocketRequest.deviceid =
-            'kiosk-' + loginStoreId + '-' + loginTerminalId;
+            "kiosk-" + loginStoreId + "-" + loginTerminalId;
         fetch(socketUrl, {
-            method: 'POST',
+            method: "POST",
             headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
+                Accept: "application/json",
+                "Content-Type": "application/json",
                 Authorization: AuthorizationHeader,
                 deviceid: deviceid,
             },
@@ -122,8 +118,8 @@ const OrderConfirmation = (props) => {
         })
             .then((res) => res.json())
             .then((data1) => {
-                const sentMessage = JSON.stringify(msgToSend)
-                if (data1.status != '206') {
+                const sentMessage = JSON.stringify(msgToSend);
+                if (data1.status != "206") {
                     socket = new WebSocket(data1.socketurl);
                     setTimeout(function () {
                         if (
@@ -135,26 +131,22 @@ const OrderConfirmation = (props) => {
                     }, 2000);
                 }
             });
-    }
+    };
 
     const receiptStoreBIRInfoData = () => {
-        return localStorage.getItem('receiptStoreBIRInfoData') == null
-        ? localStorage.setItem('receiptStoreBIRInfoData', null)
-        : JSON.parse(localStorage.getItem('receiptStoreBIRInfoData'))
-    }
+        return localStorage.getItem("receiptStoreBIRInfoData") == null
+            ? localStorage.setItem("receiptStoreBIRInfoData", null)
+            : JSON.parse(localStorage.getItem("receiptStoreBIRInfoData"));
+    };
 
     const receiptTerminalBIRInfoData = () => {
-        return localStorage.getItem('receiptTerminalBIRInfoData') == null
-        ? localStorage.setItem('receiptTerminalBIRInfoData', null)
-        : JSON.parse(
-              localStorage.getItem('receiptTerminalBIRInfoData'),
-          )
-    }
-    
-            
+        return localStorage.getItem("receiptTerminalBIRInfoData") == null
+            ? localStorage.setItem("receiptTerminalBIRInfoData", null)
+            : JSON.parse(localStorage.getItem("receiptTerminalBIRInfoData"));
+    };
 
     const createPrintRequest = (cart) => {
-        var ReceiptResponse = {};
+        let ReceiptResponse = {};
         ReceiptResponse.elevateCartResponse = null;
         ReceiptResponse.receiptAdditionalInformation = null;
         ReceiptResponse.additionalCartResponse = null;
@@ -163,18 +155,18 @@ const OrderConfirmation = (props) => {
         ReceiptResponse.receiptfooter = null;
         ReceiptResponse.store_birinfo = null;
         ReceiptResponse.terminal_birinfo = null;
-        ReceiptResponse.type = 'print';
-        ReceiptResponse.subtype = 'shopping_cart';
+        ReceiptResponse.type = "print";
+        ReceiptResponse.subtype = "shopping_cart";
         ReceiptResponse.extras = {};
         ReceiptResponse.receiptref = null;
 
         if (getPrinterConfigData() != null) {
-            var virtualprinter =
-                getPrinterConfigData().virtualprinter == 'Y' ? true : false;
-            var validatePeripherals =
+            let virtualprinter =
+                getPrinterConfigData().virtualprinter == "Y" ? true : false;
+            let validatePeripherals =
                 getPrinterConfigData().posperipherals == null ||
-                getPrinterConfigData().posperipherals.trim() == '';
-            var posid1 = loginTerminalId;
+                getPrinterConfigData().posperipherals.trim() == "";
+            let posid1 = loginTerminalId;
             if (!validatePeripherals) {
                 posid1 = getPrinterConfigData().posid;
             }
@@ -183,8 +175,8 @@ const OrderConfirmation = (props) => {
             ReceiptResponse.receiptAdditionalInformation = {};
             ReceiptResponse.additionalCartResponse = {};
             ReceiptResponse.toVoid = false;
-            ReceiptResponse.type = 'print';
-            ReceiptResponse.subtype = 'shopping_cart';
+            ReceiptResponse.type = "print";
+            ReceiptResponse.subtype = "shopping_cart";
             ReceiptResponse.extras = {};
             ReceiptResponse.extras.orderid = cart.orderid;
             ReceiptResponse.extras.trxno = cart.trxno;
@@ -194,7 +186,7 @@ const OrderConfirmation = (props) => {
             ReceiptResponse.receiptheader = {};
             ReceiptResponse.receiptfooter = {};
             ReceiptResponse.store_birinfo = receiptStoreBIRInfoData();
-            ReceiptResponse.terminal_birinfo = receiptTerminalBIRInfoData()
+            ReceiptResponse.terminal_birinfo = receiptTerminalBIRInfoData();
             let message = {};
             message.receipt = ReceiptResponse.elevateCartResponse;
             message.header = ReceiptResponse.receiptheader;
@@ -214,48 +206,50 @@ const OrderConfirmation = (props) => {
             //     virtualDeviceId: registeredDeviceData().virtualprinterid,
             // });
 
-
             //to fix
             sendPrinterMessage({
                 message: message,
                 rqType: ReceiptResponse.type,
                 rqSubType: ReceiptResponse.subtype,
-                posid: 'posid',
+                posid: "posid",
                 printerId: registeredDeviceData().printerid,
             });
         }
     };
 
     return (
-        <div className="flex" style={{ height: '100vh' }}>
+        <div className="flex" style={{ height: "100vh" }}>
             <AdsArea />
             <div className="order-confirmation-container p-4 w-full">
-            <div className="text-content">
-                <h1 className="main-heading">all done. enjoy your coffee!</h1>
-                <p className="sub-heading">
-                    take your receipt and collect your coffee at the collection
-                    point
-                </p>
-            </div>
-            <div className="order-number">
-                <p>order number:</p>
-                <h2>#{trxno}</h2>
-            </div>
-            <div class="text-center text-white text-xl">Redirecting in 
-               <span id="countdown mx-2"> {countdown}</span> seconds or click home to proceed. 
-            </div>
-            <div className="receipt-icon">
-                <div
-                    className="justify-content-center align-items-center p-4 cursor-pointer"
-                    style={{ border: '2px solid #FFF' }}
-                    onClick={handleBack}
-                >
-                    Home
+                <div className="text-content">
+                    <h1 className="main-heading">
+                        all done. enjoy your coffee!
+                    </h1>
+                    <p className="sub-heading">
+                        take your receipt and collect your coffee at the
+                        collection point
+                    </p>
+                </div>
+                <div className="order-number">
+                    <p>order number:</p>
+                    <h2>#{trxno}</h2>
+                </div>
+                <div className="text-center text-white text-xl">
+                    Redirecting in
+                    <span id="countdown mx-2"> {countdown}</span> seconds or
+                    click home to proceed.
+                </div>
+                <div className="receipt-icon">
+                    <div
+                        className="justify-content-center align-items-center p-4 cursor-pointer"
+                        style={{ border: "2px solid #FFF" }}
+                        onClick={handleBack}
+                    >
+                        Home
+                    </div>
                 </div>
             </div>
         </div>
-        </div>
-        
     );
 };
 

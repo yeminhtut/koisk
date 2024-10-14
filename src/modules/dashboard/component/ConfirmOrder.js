@@ -1,29 +1,122 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router';
-import axios from 'axios';
-import { Button } from 'primereact/button';
-import storage from '../../../utils/storage';
-import ImageIcon from '../../../components/ImageIcon';
-import OrderConfirmation from './OrderConfirmation';
-import AdsArea from './AdsArea';
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
+import axios from "axios";
+import { Button } from "primereact/button";
+import storage from "../../../utils/storage";
+import ImageIcon from "../../../components/ImageIcon";
+import OrderConfirmation from "./OrderConfirmation";
+import AdsArea from "./AdsArea";
 
-const URL = window?.config?.END_POINT;
-const terminalid = window?.config?.terminalid;
+const {
+    END_POINT: URL,
+    AuthorizationHeader,
+} = window?.config || {};
+
+const storeid = storage.get('storeid')
+const terminalid = storage.get('terminalid')
 
 const ConfirmOrder = () => {
     const navigate = useNavigate();
     const [currCart, setCurrCart] = useState(
-        () => JSON.parse(storage.get('currCart')) || {},
+        () => JSON.parse(storage.get("currCart")) || {},
     );
     const { cartid, orderid } = currCart;
 
     const [sessionid, setSessionId] =
-        useState(() => storage.get('sessionid')) || '';
+        useState(() => storage.get("sessionid")) || "";
     const [cartDetail, setCartDetail] = useState({});
     const [isSuccess, setIsSuccess] = useState(false);
-    const [orderNumber, setOrderNumber] = useState('');
-    const [printCart, setPrintCart] = useState(null);
-    const signonid = storage.get('signonid');
+    const [orderNumber, setOrderNumber] = useState("");
+    const signonid = storage.get("signonid");
+    const [isDeviceActive, setIsDeviceActive] = useState(false);
+    const [socketUrl, setSocketUrl] = useState();
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const fetchData = async () => {
+        try {
+            await getWebSocket();
+        } catch (error) {
+            console.error("Error fetching data", error);
+        }
+    };
+
+    const getWebSocket = () => {
+        let data = JSON.stringify({
+            deviceid: "kiosk_1020_1",
+            status: "Active",
+        });
+        let config = {
+            method: "post",
+            url: `${URL}/broker/v1/device/client`,
+            headers: {
+                Authorization: "7550935cd2bc97f0307afb2aa204e245",
+                "Content-Type": "application/json",
+            },
+            data: data,
+        };
+
+        axios
+            .request(config)
+            .then((response) => {
+                if (response.status === 200 && response.data) {
+                    const { clientid, socketurl } = response.data;
+                    setSocketUrl(socketurl);
+                    //handleWebSocket(socketurl);
+                    getEft();
+                }
+            })
+            .catch((error) => {
+                console.log(error);
+            });
+    };
+
+    const getEft = () => {
+        let config = {
+            method: "get",
+            url: `${URL}/system/v1/store/device/search/fields?devicegroup=Eft&status=Active&storeid=${storeid}`,
+            headers: {
+                Authorization: AuthorizationHeader,
+            },
+        };
+
+        axios
+            .request(config)
+            .then((response) => {
+                const { deviceid } = response.data[0];
+                getDeviceStatus(deviceid);
+            })
+            .catch((error) => {
+                console.log(error);
+            });
+    };
+
+    const getDeviceStatus = (deviceid) => {
+        let config = {
+            method: "get",
+            maxBodyLength: Infinity,
+            url: `${URL}/broker/v1/device/clients`,
+            headers: {
+                Authorization: AuthorizationHeader,
+            },
+        };
+
+        axios
+            .request(config)
+            .then((response) => {
+                const result = response.data;
+                const deviceStatus = result.find((r) => r.deviceid == deviceid);
+                const { status } = deviceStatus;
+                if (status === "active") {
+                    setIsDeviceActive(true);
+                }
+            })
+            .catch((error) => {
+                console.log(error);
+            });
+    };
 
     useEffect(() => {
         if (cartid) {
@@ -37,19 +130,83 @@ const ConfirmOrder = () => {
                 `${URL}/pos/v1/cart/${cartid}/${orderid}?sessionid=${newSession ? newSession : sessionid}&status=sales`,
                 {
                     headers: {
-                        Authorization: 'test',
-                        'Content-Type': 'application/json',
+                        Authorization: "test",
+                        "Content-Type": "application/json",
                     },
                     maxBodyLength: Infinity,
                 },
             );
             setCartDetail(data);
         } catch (error) {
-            console.error('Error fetching cart details:', error);
+            console.error("Error fetching cart details:", error);
         }
     };
 
-    const handlePayment = async () => {
+    const handlePayment = () => {
+        if (selectedMethod === 'Cash') {
+            handleCashPayment()
+        }
+        else {
+            if (isDeviceActive) {
+                handleWebSocket();
+            }
+            
+        }
+        
+    };
+
+    const handleWebSocket = () => {
+        const { totalamount } = cartDetail;
+        const ws = new WebSocket(socketUrl);
+        const uId = "EFT_" + new Date().getTime();
+        const msgToSend = {
+            header: {
+                msgid: uId,
+                //to: getEftDeviceKeyByValue(deviceType),
+                to: "EFT711887",
+                from: "kiosk_1020_1",
+                rqtype: "pay",
+                rqsubtype: "sale",
+                deviceType: "eft",
+            },
+            message: {
+                amount: totalamount * 100,
+            },
+        };
+        // Connection opened
+        ws.onopen = () => {
+            console.log("WebSocket connected");
+            //ws.send("Hello Server!"); // Send a message to the server
+            ws.send(JSON.stringify(msgToSend));
+        };
+
+        // Listen for messages
+        ws.onmessage = (event) => {
+            console.log("Message received:", event.data);
+            checkEftRes(event.data);
+        };
+
+        // Handle connection close
+        ws.onclose = () => {
+            console.log("WebSocket disconnected");
+        };
+
+        // Handle errors
+        ws.onerror = (error) => {
+            console.error("WebSocket error:", error);
+        };
+
+        // Clean up the WebSocket connection on unmount
+        return () => {
+            ws.close();
+        };
+    };
+
+    const checkEftRes = (message) => {
+        console.log('check', JSON.parse(message))
+    };
+
+    const handleCashPayment = async () => {
         try {
             const { cartid, orderid, totalamount } = cartDetail;
             const paymentData = {
@@ -59,28 +216,42 @@ const ConfirmOrder = () => {
                 paytype: 'Cash',
                 paytyperef: 'Cash',
             };
-
-            await axios.post(
-                `${URL}/pos/v1/cart/${cartid}/payment`,
+            const result = await axios.post(
+                `${URL}/pos/v1/cart/${cartid}/payment?${sessionid}`,
                 JSON.stringify(paymentData),
                 {
                     headers: {
-                        Authorization: 'test',
+                        Authorization: AuthorizationHeader,
                         'Content-Type': 'application/json',
                     },
                     maxBodyLength: Infinity,
                 },
             );
-            closeCart();
+            const { idx } = result.data
+            console.log('result are', result.data)
+            if (idx) {
+                closeCart()
+                storage.remove('currCart')
+            }
         } catch (error) {
             console.error('Error processing payment:', error);
         }
     };
 
+    // const createEftPayload = () => {
+    //     const data = {
+    //         amount: payamount * 100,
+    //         rqType: "pay",
+    //         rqSubtype: "sale",
+    //         cardtype: null,
+    //         additionalMessage: data.additionalMessage,
+    //         deviceType:"eft"
+    //     }
+    // }
+
     const closeCart = async () => {
         try {
             const { cartid, orderid } = cartDetail;
-            console.log('what happen', signonid)
             const closeData = {
                 orderid,
                 signonid,
@@ -92,17 +263,17 @@ const ConfirmOrder = () => {
                 JSON.stringify(closeData),
                 {
                     headers: {
-                        Authorization: 'test',
-                        'Content-Type': 'application/json',
+                        Authorization: "test",
+                        "Content-Type": "application/json",
                     },
                     maxBodyLength: Infinity,
                 },
             );
             setOrderNumber(data);
             setIsSuccess(true);
-            setPrintCart(data);
+            //setPrintCart(data);
         } catch (error) {
-            console.error('Error closing cart:', error);
+            console.error("Error closing cart:", error);
         }
     };
 
@@ -110,24 +281,24 @@ const ConfirmOrder = () => {
         try {
             const { cartid, orderid } = cartDetail;
             await axios.put(
-                `${URL}/pos/v1/cart/${cartid}/void`,
+                `${URL}/pos/v1/cart/${cartid}/cancel`,
                 JSON.stringify({ orderid }),
                 {
                     headers: {
-                        Authorization: 'test',
-                        'Content-Type': 'application/json',
+                        Authorization: "test",
+                        "Content-Type": "application/json",
                     },
                     maxBodyLength: Infinity,
                 },
             );
-            storage.remove('currCart');
-            navigate('/item-listing', { replace: true });
+            storage.remove("currCart");
+            navigate("/item-listing", { replace: true });
         } catch (error) {
-            console.error('Error voiding cart:', error);
+            console.error("Error voiding cart:", error);
         }
     };
 
-    const handleBack = () => navigate('/', { replace: true });
+    const handleBack = () => navigate("/item-listing", { replace: true });
 
     const updateCartItem = async (item, quantity) => {
         try {
@@ -145,17 +316,17 @@ const ConfirmOrder = () => {
                 JSON.stringify(data),
                 {
                     headers: {
-                        Authorization: 'test',
-                        'Content-Type': 'application/json',
+                        Authorization: "test",
+                        "Content-Type": "application/json",
                     },
                     maxBodyLength: Infinity,
                 },
             );
             const { sessionid } = repsonse.data;
-            storage.set('sessionid', sessionid);
+            storage.set("sessionid", sessionid);
             fetchCartDetails(sessionid);
         } catch (error) {
-            console.error('Error updating cart item:', error);
+            console.error("Error updating cart item:", error);
         }
     };
 
@@ -169,23 +340,30 @@ const ConfirmOrder = () => {
         }
     };
 
+    const [selectedMethod, setSelectedMethod] = useState("Cash");
+
+    const handleSelection = (method) => {
+        setSelectedMethod(method);
+    };
+
+
     const CartView = () => (
-        <div className="flex" style={{ height: '100vh' }}>
+        <div className="flex" style={{ height: "100vh" }}>
             <AdsArea />
             <div className="p-4 w-full">
                 <div className="flex align-items-center justify-content-between mb-4">
                     <div onClick={handleBack}>
                         <ImageIcon
-                            iconName={'back_arrow.png'}
-                            style={{ width: '30px', height: '30px' }}
+                            iconName={"back_arrow.png"}
+                            style={{ width: "30px", height: "30px" }}
                         />
                     </div>
                     <h2>Confirm Order</h2>
-                    <div className="clsbtn" onClick={voidCart}>
+                    <div className="clsbtn cursor-pointer" onClick={voidCart}>
                         Clear
                     </div>
                 </div>
-                <div style={{ paddingBottom: '60px' }}>
+                <div style={{ paddingBottom: "60px" }}>
                     <div className="mb-4">
                         <h3>Order Items</h3>
                         {cartDetail.items?.map((item, index) => (
@@ -200,24 +378,32 @@ const ConfirmOrder = () => {
                     </div>
                     <div className="mb-4">
                         <h3>Choose Payment Method</h3>
-                        <div
-                            className="col-4 justify-content-center align-items-center p-4"
-                            style={{ border: '4px solid #D8D8D8' }}
-                        >
-                            Cash
+                        <div className="flex">
+                            <div
+                                className={`col-4 justify-content-center align-items-center mr-4 p-4 payment-option ${selectedMethod === "Cash" ? "selected" : ""}`}
+                                onClick={() => handleSelection("Cash")}
+                            >
+                                Cash
+                            </div>
+                            <div
+                                className={`col-4 justify-content-center align-items-center p-4 payment-option ${selectedMethod === "Card" ? "selected" : ""}`}
+                                onClick={() => handleSelection("Card")}
+                            >
+                                Card
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div
                     className="w-full flex align-items-center justify-content-center fixed right-0 bottom-0 p-4 cursor-pointer col-md-12 col-lg-6"
                     style={{
-                        backgroundColor: '#78838E',
-                        color: '#FFF',
-                        fontSize: '32px',
+                        backgroundColor: "#78838E",
+                        color: "#FFF",
+                        fontSize: "32px",
                     }}
                     onClick={handlePayment}
                 >
-                    Place Order P{cartDetail.totalamount}.000
+                    Place Order P{cartDetail.totalamount?.toFixed(2)}
                 </div>
             </div>
         </div>

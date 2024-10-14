@@ -1,23 +1,52 @@
-import React, { useEffect, useState } from 'react';
-import { useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import appActions from '../../../appActions';
-import storage from '../../../utils/storage';
-import TouchImage from '../../../assets/icons/touch-bg.png'
+import React, { useEffect, useState, useRef } from "react";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { useParams } from "react-router-dom";
+import { Toast } from 'primereact/toast';     
+import appActions from "../../../appActions";
+import storage from "../../../utils/storage";
+import TouchImage from "../../../assets/icons/touch-bg.png";
 
-const { END_POINT: URL, terminalid, storeid, AuthorizationHeader } = window?.config || {};
+const {
+    END_POINT: URL,
+    AuthorizationHeader,
+} = window?.config || {};
 
 const WelcomeComponent = () => {
+    const { storeId, terminalId } = useParams();
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    const [bgImg , setBgImg] = useState('')
+    const [bgImg, setBgImg] = useState("http://tgcs-dev4.tgcs-elevate.com:9000/media/start-page_2560x1600.jpg");
+    const toast = useRef(null);
+    const [storeid, setStoreId] = useState(storage.get('storeid'))
+    const [terminalid, setTerminalId] = useState(storage.get('terminalid'))
+    const [isLocked, setIsLocked] = useState(false)
 
     useEffect(() => {
+      if (!storeid || !terminalid) {
+        toast.current.show({ severity: 'info', summary: 'Info', detail: 'Please configure storeid and terminalid' });
+      }
+    }, [])
+
+    useEffect(() => {
+      if (storeId) {
+        storage.set('storeid', storeId)
+        setStoreId(storeId)
+      }
+      if (terminalId) {
+        storage.set('terminalid', terminalId)
+        setTerminalId(terminalId)
+      }
+    }, [storeId, terminalId])
+
+    useEffect(() => {
+      if (storeid && terminalid) {
         dispatch(appActions.STORE_GET_REQUEST(storeid));
         fetchData();
-        storage.set('session', 'test')
-    }, [dispatch]);
+        storage.set("session", AuthorizationHeader);
+      }
+    }, [storeid, terminalid])
 
     const fetchData = async () => {
         try {
@@ -33,35 +62,35 @@ const WelcomeComponent = () => {
 
     const getImage = () => {
         let config = {
-            method: 'get',
+            method: "get",
             url: `${URL}/system/v1/store/tag/search/fields?taggroup=storeprops&tagtype=storeprops&storeid=${storeid}&pagesize=10&pageno=1`,
-            headers: { 
-                'Authorization': '7550935cd2bc97f0307afb2aa204e245',
-                'Content-Type': 'application/json', 
-            }
+            headers: {
+                Authorization: "7550935cd2bc97f0307afb2aa204e245",
+                "Content-Type": "application/json",
+            },
         };
 
-        axios.request(config)
-        .then((response) => {
-            if (response.status === 200 && response.data.length > 0) {
-                const { additionalfields } = response.data[0]
-                const { sco } = additionalfields
-                if (sco) {
-                    const { start_page } = JSON.parse(sco)
-                    setBgImg(start_page ? start_page : TouchImage )
+        axios
+            .request(config)
+            .then((response) => {
+                if (response.status === 200 && response.data.length > 0) {
+                    const { additionalfields } = response.data[0];
+                    const { sco, quicklookupcatcode } = additionalfields;
+                    if (sco) {
+                        const { start_page } = JSON.parse(sco);
+                        setBgImg(start_page ? start_page : TouchImage);
+                        storage.set('categoryCode', quicklookupcatcode)
+                    }
                 }
-                
-            }
-        })
-        .catch((error) => {
-            console.log(error);
-        });
-
-    }
+            })
+            .catch((error) => {
+                console.log(error);
+            });
+    };
 
     const getSignOnId = async () => {
         const config = {
-            method: 'get',
+            method: "get",
             url: `${URL}/pos/v1/terminal/signon/search/fields?terminalid=${terminalid}&storeid=${storeid}&status=Active`,
             headers: { Authorization: AuthorizationHeader },
         };
@@ -70,7 +99,12 @@ const WelcomeComponent = () => {
             const response = await axios.request(config);
             if (response.status === 200) {
                 const { signonid } = response.data;
-                storage.set('signonid', signonid);
+                storage.set("signonid", signonid);
+            }
+            if (response.status == 206) {
+                const { message } = response.data
+                toast.current.show({ severity: 'error', summary: 'Info', detail: message });
+                setIsLocked(true)
             }
         } catch (error) {
             console.error("Error fetching SignOn ID", error);
@@ -79,7 +113,7 @@ const WelcomeComponent = () => {
 
     const getPrinterConfig = async () => {
         const config = {
-            method: 'get',
+            method: "get",
             url: `${URL}/system/v1/store/device/search/fields?devicegroup=terminal&status=Active&storeid=${storeid}&terminalid=${terminalid}`,
             headers: { Authorization: AuthorizationHeader },
         };
@@ -88,7 +122,10 @@ const WelcomeComponent = () => {
             const response = await axios.request(config);
             if (response.status !== 206) {
                 const addFields = response.data[0]?.additionalfields;
-                localStorage.setItem('printerConfigData', JSON.stringify(addFields));
+                localStorage.setItem(
+                    "printerConfigData",
+                    JSON.stringify(addFields),
+                );
                 getRegisteredDevices(addFields.posperipherals);
             }
         } catch (error) {
@@ -98,14 +135,17 @@ const WelcomeComponent = () => {
 
     const getBirInfo = async () => {
         const config = {
-            method: 'get',
+            method: "get",
             url: `${URL}/system/v1/store/tag/search/fields?storeid=${storeid}&taggroup=storeprops&tagtype=birinfo&status=Active`,
             headers: { Authorization: AuthorizationHeader },
         };
 
         try {
             const response = await axios.request(config);
-            localStorage.setItem('receiptStoreBIRInfoData', JSON.stringify(response.data[0]?.additionalfields));
+            localStorage.setItem(
+                "receiptStoreBIRInfoData",
+                JSON.stringify(response.data[0]?.additionalfields),
+            );
         } catch (error) {
             console.error("Error fetching Store BIR Info", error);
         }
@@ -113,14 +153,17 @@ const WelcomeComponent = () => {
 
     const getTerminalBirInfo = async () => {
         const config = {
-            method: 'get',
+            method: "get",
             url: `${URL}/system/v1/store/tag/search/fields?taggroup=tprops&tagtype=birinfo&status=Active&storeid=${storeid}&terminalid=${terminalid}`,
             headers: { Authorization: AuthorizationHeader },
         };
 
         try {
             const response = await axios.request(config);
-            storage.set('receiptTerminalBIRInfoData', JSON.stringify(response.data[0]?.additionalfields));
+            storage.set(
+                "receiptTerminalBIRInfoData",
+                JSON.stringify(response.data[0]?.additionalfields),
+            );
         } catch (error) {
             console.error("Error fetching Terminal BIR Info", error);
         }
@@ -128,8 +171,8 @@ const WelcomeComponent = () => {
 
     const getRegisteredDevices = async (deviceids) => {
         const config = {
-            method: 'get',
-            url: `${URL}/system/v1/store/device/search/fields?devicegroup=Printer,Virtualprinter&status=Active&storeid=${storeid}&deviceid=PRT503053,EFT467432`,
+            method: "get",
+            url: `${URL}/system/v1/store/device/search/fields?devicegroup=Printer,Virtualprinter,Eft&status=Active&storeid=${storeid}`,
             headers: { Authorization: AuthorizationHeader },
         };
 
@@ -139,13 +182,20 @@ const WelcomeComponent = () => {
                 const deviceData = response.data.reduce(
                     (acc, device) => {
                         const group = device.devicegroup.toLowerCase();
-                        if (group === 'printer') acc.printerid = device.deviceid;
-                        if (group === 'virtualprinter') acc.virtualprinterid = device.deviceid;
+                        if (group === "printer")
+                            acc.printerid = device.deviceid;
+                        if (group === "virtualprinter")
+                            acc.virtualprinterid = device.deviceid;
+                        if (group === "eft")
+                            acc.eft = device.deviceid;
                         return acc;
                     },
-                    { printerid: '', virtualprinterid: '' }
+                    { printerid: "", virtualprinterid: "" },
                 );
-                localStorage.setItem('registeredDeviceData', JSON.stringify(deviceData));
+                localStorage.setItem(
+                    "registeredDeviceData",
+                    JSON.stringify(deviceData),
+                );
             }
         } catch (error) {
             console.error("Error fetching Registered Devices", error);
@@ -153,27 +203,33 @@ const WelcomeComponent = () => {
     };
 
     const handleClick = () => {
-        navigate('/item-listing', { replace: true });
+        const storeid = storage.get('storeid')
+        const terminalid = storage.get('terminalid')
+        if (storeid && terminalid && !isLocked) {
+          navigate("/item-listing", { replace: true });
+        }
+        else {
+            toast.current.show({ severity: 'info', summary: 'Info', detail: 'Please configure storeid and terminalid' }); 
+        }
     };
 
     return (
-        <div className="background cursor-pointer"  onClick={handleClick} style={{ backgroundImage: `url(${bgImg})` }}>
+      <>
+        <Toast ref={toast} />
+        <div
+            className="background cursor-pointer"
+            onClick={handleClick}
+            style={{ backgroundImage: `url(${bgImg})` }}
+        >
             <div className="layer"></div>
-            <div className="flex flex-column justify-center" style={{ zIndex: 1 }}>
-                <div className="mb-8 flex justify-center">
-                    <img
-                        src={`${process.env.PUBLIC_URL}/assets/icons/harland-logo.png`}
-                        alt="Harland Logo"
-                        style={{ maxWidth: '300px' }}
-                    />
-                </div>
-                <div>
-                    <button className="start-button" style={{ width: '400px' }}>
-                        touch to start
-                    </button>
-                </div>
+            <div
+                className="flex flex-column justify-center"
+                style={{ zIndex: 1 }}
+            >
             </div>
         </div>
+      </>
+        
     );
 };
 
