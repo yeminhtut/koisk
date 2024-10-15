@@ -1,22 +1,21 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import axios from "axios";
 import { Button } from "primereact/button";
+import { Toast } from "primereact/toast";
 import storage from "../../../utils/storage";
 import ImageIcon from "../../../components/ImageIcon";
 import OrderConfirmation from "./OrderConfirmation";
 import AdsArea from "./AdsArea";
 
-const {
-    END_POINT: URL,
-    AuthorizationHeader,
-} = window?.config || {};
+const { END_POINT: URL, AuthorizationHeader } = window?.config || {};
 
-const storeid = storage.get('storeid')
-const terminalid = storage.get('terminalid')
+const storeid = storage.get("storeid");
+const terminalid = storage.get("terminalid");
 
 const ConfirmOrder = () => {
     const navigate = useNavigate();
+    const toast = useRef(null);
     const [currCart, setCurrCart] = useState(
         () => JSON.parse(storage.get("currCart")) || {},
     );
@@ -86,14 +85,15 @@ const ConfirmOrder = () => {
             .request(config)
             .then((response) => {
                 const { deviceid } = response.data[0];
-                getDeviceStatus(deviceid);
+                storage.set('eft', deviceid)
             })
             .catch((error) => {
                 console.log(error);
             });
     };
 
-    const getDeviceStatus = (deviceid) => {
+    const getDeviceStatus = () => {
+        const deviceid = storage.get('eft')
         let config = {
             method: "get",
             maxBodyLength: Infinity,
@@ -108,9 +108,16 @@ const ConfirmOrder = () => {
             .then((response) => {
                 const result = response.data;
                 const deviceStatus = result.find((r) => r.deviceid == deviceid);
-                const { status } = deviceStatus;
-                if (status === "active") {
+                if (deviceStatus && deviceStatus.status === "Active") {
                     setIsDeviceActive(true);
+                } else {
+                    toast.current.show({
+                        severity: "error",
+                        summary: "Error",
+                        detail: "Device is not active",
+                        life: 10000,
+                    });
+                    setIsDeviceActive(false)
                 }
             })
             .catch((error) => {
@@ -143,31 +150,62 @@ const ConfirmOrder = () => {
     };
 
     const handlePayment = () => {
-        if (selectedMethod === 'Cash') {
-            handleCashPayment()
-        }
-        else {
+        if (selectedMethod === "Cash") {
+            handleCashPayment();
+        } else {
+            getDeviceStatus()
             if (isDeviceActive) {
-                handleWebSocket();
+                paymentSignOn()
             }
-            
         }
-        
     };
 
-    const handleWebSocket = () => {
+    const paymentSignOn = () => {
+        const { cartid, sessionid, orderid } = currCart
+        const { totalamount } = cartDetail;
+        let data = JSON.stringify({
+            "orderid": orderid,
+            "payamount": totalamount,
+            "paytype": "eft"
+          });
+          
+          let config = {
+            method: 'post',
+            maxBodyLength: Infinity,
+            url: `${URL}/pos/v1/cart/${cartid}/payment?sessionid=${sessionid}`,
+            headers: { 
+              'Authorization': 'test', 
+              'Content-Type': 'application/json'
+            },
+            data : data
+          };
+          
+          axios.request(config)
+          .then((response) => {
+            const {idx} = response.data
+           handleWebSocket(idx);
+          })
+          .catch((error) => {
+            console.log(error);
+          });
+    }
+
+
+    const handleWebSocket = (idx) => {
         const { totalamount } = cartDetail;
         const ws = new WebSocket(socketUrl);
         const uId = "EFT_" + new Date().getTime();
+        const kioskId = 'kiosk_' + storeid + terminalid
         const msgToSend = {
             header: {
                 msgid: uId,
                 //to: getEftDeviceKeyByValue(deviceType),
-                to: "EFT711887",
-                from: "kiosk_1020_1",
+                to: storage.get('eft'),
+                from: kioskId,
                 rqtype: "pay",
                 rqsubtype: "sale",
                 deviceType: "eft",
+                //additionalMessage: {idx}
             },
             message: {
                 amount: totalamount * 100,
@@ -176,12 +214,15 @@ const ConfirmOrder = () => {
         // Connection opened
         ws.onopen = () => {
             console.log("WebSocket connected");
-            //ws.send("Hello Server!"); // Send a message to the server
             ws.send(JSON.stringify(msgToSend));
+            setTimeout(() => {
+                checkEftRes()
+            }, 10000); 
         };
 
         // Listen for messages
         ws.onmessage = (event) => {
+            alert(event.data)
             console.log("Message received:", event.data);
             checkEftRes(event.data);
         };
@@ -202,19 +243,25 @@ const ConfirmOrder = () => {
         };
     };
 
-    const checkEftRes = (message) => {
-        console.log('check', JSON.parse(message))
+    const checkEftRes = (resp) => {
+        // const data = JSON.parse(resp);
+        toast.current.show({
+            severity: "error",
+            summary: "Error",
+            detail: "Error connecting to EFT",
+            life: 10000,
+        });
     };
 
     const handleCashPayment = async () => {
         try {
             const { cartid, orderid, totalamount } = cartDetail;
             const paymentData = {
-                description: 'cash',
+                description: "cash",
                 orderid,
                 payamount: totalamount,
-                paytype: 'Cash',
-                paytyperef: 'Cash',
+                paytype: "Cash",
+                paytyperef: "Cash",
             };
             const result = await axios.post(
                 `${URL}/pos/v1/cart/${cartid}/payment?${sessionid}`,
@@ -222,19 +269,18 @@ const ConfirmOrder = () => {
                 {
                     headers: {
                         Authorization: AuthorizationHeader,
-                        'Content-Type': 'application/json',
+                        "Content-Type": "application/json",
                     },
                     maxBodyLength: Infinity,
                 },
             );
-            const { idx } = result.data
-            console.log('result are', result.data)
+            const { idx } = result.data;
             if (idx) {
-                closeCart()
-                storage.remove('currCart')
+                closeCart();
+                storage.remove("currCart");
             }
         } catch (error) {
-            console.error('Error processing payment:', error);
+            console.error("Error processing payment:", error);
         }
     };
 
@@ -271,7 +317,6 @@ const ConfirmOrder = () => {
             );
             setOrderNumber(data);
             setIsSuccess(true);
-            //setPrintCart(data);
         } catch (error) {
             console.error("Error closing cart:", error);
         }
@@ -346,7 +391,6 @@ const ConfirmOrder = () => {
         setSelectedMethod(method);
     };
 
-
     const CartView = () => (
         <div className="flex" style={{ height: "100vh" }}>
             <AdsArea />
@@ -408,11 +452,17 @@ const ConfirmOrder = () => {
             </div>
         </div>
     );
-
-    return !isSuccess ? (
-        <CartView />
-    ) : (
-        <OrderConfirmation orderNumber={orderNumber} handleBack={handleBack} />
+    return (
+        <>
+            <Toast ref={toast} />
+            {!isSuccess && <CartView />}
+            {isSuccess && (
+                <OrderConfirmation
+                    orderNumber={orderNumber}
+                    handleBack={handleBack}
+                />
+            )}
+        </>
     );
 };
 

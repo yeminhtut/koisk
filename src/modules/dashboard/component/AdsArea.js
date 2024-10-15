@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import storage from "../../../utils/storage";
 
-
-const { END_POINT: URL, terminalid, storeid, AuthorizationHeader } = window?.config || {};
-
+const { END_POINT: URL, AuthorizationHeader } = window?.config || {};
+const storeid = storage.get('storeid')
 const AdsArea = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [fade, setFade] = useState(true);

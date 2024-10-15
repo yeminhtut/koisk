@@ -25,7 +25,7 @@ const OrderConfirmation = (props) => {
     let deviceid = `kiosk_${storeid}_${terminalid}`;
 
     const navigate = useNavigate();
-    const [countdown, setCountdown] = useState(10);
+    const [countdown, setCountdown] = useState(30);
 
     useEffect(() => {
         const cart = JSON.parse(storage.get("currCart")) || {};
@@ -39,7 +39,7 @@ const OrderConfirmation = (props) => {
         //if (trxno) {
         const intervalId = setInterval(() => {
             setCountdown((prev) => prev - 1);
-        }, 3000);
+        }, 30000);
         const timer = setTimeout(() => {
             navigate("/item-listing", { replace: true });
         }, 30000); // 10 seconds

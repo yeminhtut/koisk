@@ -3,50 +3,53 @@ import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useParams } from "react-router-dom";
-import { Toast } from 'primereact/toast';     
+import { Toast } from "primereact/toast";
 import appActions from "../../../appActions";
 import storage from "../../../utils/storage";
 import TouchImage from "../../../assets/icons/touch-bg.png";
 
-const {
-    END_POINT: URL,
-    AuthorizationHeader,
-} = window?.config || {};
+const { END_POINT: URL, AuthorizationHeader } = window?.config || {};
 
 const WelcomeComponent = () => {
     const { storeId, terminalId } = useParams();
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    const [bgImg, setBgImg] = useState("http://tgcs-dev4.tgcs-elevate.com:9000/media/start-page_2560x1600.jpg");
+    const [bgImg, setBgImg] = useState(
+        "http://tgcs-dev4.tgcs-elevate.com:9000/media/start-page_2560x1600.jpg",
+    );
     const toast = useRef(null);
-    const [storeid, setStoreId] = useState(storage.get('storeid'))
-    const [terminalid, setTerminalId] = useState(storage.get('terminalid'))
-    const [isLocked, setIsLocked] = useState(false)
+    const [storeid, setStoreId] = useState(storage.get("storeid"));
+    const [terminalid, setTerminalId] = useState(storage.get("terminalid"));
+    const [isLocked, setIsLocked] = useState(false);
 
     useEffect(() => {
-      if (!storeid || !terminalid) {
-        toast.current.show({ severity: 'info', summary: 'Info', detail: 'Please configure storeid and terminalid' });
-      }
-    }, [])
+        if (!storeid || !terminalid) {
+            toast.current.show({
+                severity: "info",
+                summary: "Info",
+                detail: "Please configure storeid and terminalid",
+            });
+        }
+    }, []);
 
     useEffect(() => {
-      if (storeId) {
-        storage.set('storeid', storeId)
-        setStoreId(storeId)
-      }
-      if (terminalId) {
-        storage.set('terminalid', terminalId)
-        setTerminalId(terminalId)
-      }
-    }, [storeId, terminalId])
+        if (storeId) {
+            storage.set("storeid", storeId);
+            setStoreId(storeId);
+        }
+        if (terminalId) {
+            storage.set("terminalid", terminalId);
+            setTerminalId(terminalId);
+        }
+    }, [storeId, terminalId]);
 
     useEffect(() => {
-      if (storeid && terminalid) {
-        dispatch(appActions.STORE_GET_REQUEST(storeid));
-        fetchData();
-        storage.set("session", AuthorizationHeader);
-      }
-    }, [storeid, terminalid])
+        if (storeid && terminalid) {
+            dispatch(appActions.STORE_GET_REQUEST(storeid));
+            fetchData();
+            storage.set("session", AuthorizationHeader);
+        }
+    }, [storeid, terminalid]);
 
     const fetchData = async () => {
         try {
@@ -79,7 +82,7 @@ const WelcomeComponent = () => {
                     if (sco) {
                         const { start_page } = JSON.parse(sco);
                         setBgImg(start_page ? start_page : TouchImage);
-                        storage.set('categoryCode', quicklookupcatcode)
+                        storage.set("categoryCode", quicklookupcatcode);
                     }
                 }
             })
@@ -102,9 +105,13 @@ const WelcomeComponent = () => {
                 storage.set("signonid", signonid);
             }
             if (response.status == 206) {
-                const { message } = response.data
-                toast.current.show({ severity: 'error', summary: 'Info', detail: message });
-                setIsLocked(true)
+                const { message } = response.data;
+                toast.current.show({
+                    severity: "error",
+                    summary: "Info",
+                    detail: message,
+                });
+                setIsLocked(true);
             }
         } catch (error) {
             console.error("Error fetching SignOn ID", error);
@@ -186,8 +193,7 @@ const WelcomeComponent = () => {
                             acc.printerid = device.deviceid;
                         if (group === "virtualprinter")
                             acc.virtualprinterid = device.deviceid;
-                        if (group === "eft")
-                            acc.eft = device.deviceid;
+                        if (group === "eft") acc.eft = device.deviceid;
                         return acc;
                     },
                     { printerid: "", virtualprinterid: "" },
@@ -203,33 +209,34 @@ const WelcomeComponent = () => {
     };
 
     const handleClick = () => {
-        const storeid = storage.get('storeid')
-        const terminalid = storage.get('terminalid')
+        const storeid = storage.get("storeid");
+        const terminalid = storage.get("terminalid");
         if (storeid && terminalid && !isLocked) {
-          navigate("/item-listing", { replace: true });
-        }
-        else {
-            toast.current.show({ severity: 'info', summary: 'Info', detail: 'Please configure storeid and terminalid' }); 
+            navigate("/item-listing", { replace: true });
+        } else {
+            toast.current.show({
+                severity: "info",
+                summary: "Info",
+                detail: "Please configure storeid and terminalid",
+            });
         }
     };
 
     return (
-      <>
-        <Toast ref={toast} />
-        <div
-            className="background cursor-pointer"
-            onClick={handleClick}
-            style={{ backgroundImage: `url(${bgImg})` }}
-        >
-            <div className="layer"></div>
+        <>
+            <Toast ref={toast} />
             <div
-                className="flex flex-column justify-center"
-                style={{ zIndex: 1 }}
+                className="background cursor-pointer"
+                onClick={handleClick}
+                style={{ backgroundImage: `url(${bgImg})` }}
             >
+                <div className="layer"></div>
+                <div
+                    className="flex flex-column justify-center"
+                    style={{ zIndex: 1 }}
+                ></div>
             </div>
-        </div>
-      </>
-        
+        </>
     );
 };
 

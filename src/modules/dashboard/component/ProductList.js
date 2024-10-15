@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { RadioButton } from 'primereact/radiobutton';
 import { Checkbox } from 'primereact/checkbox';
 import { Divider } from 'primereact/divider';
+import { Toast } from 'primereact/toast';
 import appActions from '../../../appActions';
 import storage from '../../../utils/storage';
 import ImageIcon from '../../../components/ImageIcon';
@@ -17,6 +17,7 @@ const terminalid = window?.config?.terminalid;
 const ProductList = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    
 
     const [activeTab, setActiveTab] = useState('coffee');
     const [isDetail, setIsDetail] = useState(false);
@@ -115,7 +116,11 @@ const ProductList = () => {
         setIsDetail(false);
     };
 
-    const handleViewCart = () => navigate('/confirm-order', { replace: true });
+    const handleViewCart = () => {
+        if (cartDetail.itemcount > 0) {
+            navigate('/confirm-order', { replace: true });
+        }
+    }
 
     const checkCartValue = () => !!(order?.orderid || currCart?.cartid);
 
@@ -173,7 +178,7 @@ const ProductList = () => {
                         </span>
                         <span style={{ fontSize: '28px' }}>View Cart</span>
                         <span style={{ fontSize: '22px' }}>
-                            ₱ {cartDetail.totalamount}.000
+                            ₱ {cartDetail.totalamount}.00
                         </span>
                     </div>
                 )}
@@ -183,6 +188,7 @@ const ProductList = () => {
 
     return (
         <div className="flex" style={{ minHeight: '100vh' }}>
+            
             <AdsArea />
             <div className="menu-area">
                 <div className="menu-items">
@@ -216,6 +222,7 @@ const ProductDetail = ({
     const [productAddons, setProductAddon] = useState([]);
 
     const handleCloseDetail = () => handleClose();
+    const toast = useRef(null);
 
     useEffect(() => {
         getProductAddOn();
@@ -281,11 +288,9 @@ const ProductDetail = ({
                 if (response.status == 200) {
                     handleAddItem(response.data, cartid)
                 }
-                // else {
-                //     toast.current.show({ severity: 'info', summary: 'Info', detail: response.data.message }); 
-                // }
-                console.log('wrong in here', response)
-                
+                else {
+                    toast.current.show({ severity: 'info', summary: 'Info', detail: response.data.message }); 
+                }
             })
             .catch((error) => console.error(error));
     };
@@ -389,6 +394,7 @@ const ProductDetail = ({
 
     return (
         <div className="flex flex-column h-full">
+            <Toast ref={toast} />
             <MenuItem
                 label={selectedItem.additionalfields.title}
                 imgSrc={getImage()}
