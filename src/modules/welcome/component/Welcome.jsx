@@ -3,6 +3,7 @@ import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useParams } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { Toast } from "primereact/toast";
 import appActions from "../../../appActions";
 import storage from "../../../utils/storage";
@@ -10,8 +11,15 @@ import TouchImage from "../../../assets/icons/touch-bg.png";
 
 const { END_POINT: URL, AuthorizationHeader } = window?.config || {};
 
+const useQuery = () => {
+    return new URLSearchParams(useLocation().search);
+};
+
 const WelcomeComponent = () => {
-    const { storeId, terminalId } = useParams();
+    const query = useQuery();
+    const storeId = query.get("storeid");
+    const terminalId = query.get("terminalid");
+   // const { storeId, terminalId } = useParams();
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const [bgImg, setBgImg] = useState(
@@ -22,15 +30,15 @@ const WelcomeComponent = () => {
     const [terminalid, setTerminalId] = useState(storage.get("terminalid"));
     const [isLocked, setIsLocked] = useState(false);
 
-    useEffect(() => {
-        if (!storeid || !terminalid) {
-            toast.current.show({
-                severity: "info",
-                summary: "Info",
-                detail: "Please configure storeid and terminalid",
-            });
-        }
-    }, []);
+    // useEffect(() => {
+    //     if (!storeid || !terminalid) {
+    //         toast.current.show({
+    //             severity: "info",
+    //             summary: "Info",
+    //             detail: "Please configure storeid and terminalid",
+    //         });
+    //     }
+    // }, []);
 
     useEffect(() => {
         if (storeId) {
@@ -78,7 +86,8 @@ const WelcomeComponent = () => {
             .then((response) => {
                 if (response.status === 200 && response.data.length > 0) {
                     const { additionalfields } = response.data[0];
-                    const { sco, quicklookupcatcode } = additionalfields;
+                    const { sco, quicklookupcatcode, paymenttimeout } = additionalfields;
+                    storage.set("payTimeOut", paymenttimeout)
                     if (sco) {
                         const { start_page } = JSON.parse(sco);
                         setBgImg(start_page ? start_page : TouchImage);

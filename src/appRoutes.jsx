@@ -28,7 +28,6 @@ const AppRoutes = () => (
             <Route path="/confirm-order" element={<ConfirmOrder />} />
             <Route path="/item-listing" element={<ProductList />} />
             <Route path="/payment-success" element={<OrderConfirmation />} />
-            <Route path="/confirm-order" element={<ConfirmOrder />} />
         </Routes>
     </BrowserRouter>
 );
