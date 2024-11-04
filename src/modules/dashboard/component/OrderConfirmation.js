@@ -7,7 +7,7 @@ const OrderConfirmation = (props) => {
     const { trx } = orderNumber || {};
     const { trxno } = trx || {};
     const handleBack = () => {
-        props.handleBack();
+      navigate("/", { replace: true });
     };
 
     const navigate = useNavigate();
@@ -20,7 +20,7 @@ const OrderConfirmation = (props) => {
           }, 1000); // Update every second (1000 ms = 1 second)
   
           const timer = setTimeout(() => {
-              navigate("/item-listing", { replace: true });
+              navigate("/", { replace: true });
           }, 30000); // Redirect after 30 seconds
   
           return () => {
@@ -29,37 +29,22 @@ const OrderConfirmation = (props) => {
           };
       //}
     }, [navigate, trxno]);
-    
+
     return (
-        <div className="flex" style={{ height: "100vh" }}>
-            <AdsArea />
+        <div className="flex w-full" style={{ height: "100vh", cursor: "pointer" }} onClick={handleBack}>
             <div className="order-confirmation-container p-4 w-full">
                 <div className="text-content">
                     <h1 className="main-heading">
-                        all done. enjoy your coffee!
+                      please take your receipt
                     </h1>
-                    <p className="sub-heading">
-                        take your receipt and collect your coffee at the
-                        collection point
-                    </p>
                 </div>
                 <div className="order-number">
-                    <p>order number:</p>
-                    <h2>#{trxno}</h2>
+                    <h2>Order: #{trxno}</h2>
                 </div>
                 <div className="text-center text-white text-xl">
+                    <p>your number will be called at the pick up area</p>
                     Redirecting in
-                    <span id="countdown mx-2"> {countdown}</span> seconds or
-                    click home to proceed.
-                </div>
-                <div className="receipt-icon">
-                    <div
-                        className="justify-content-center align-items-center p-4 cursor-pointer"
-                        style={{ border: "2px solid #FFF" }}
-                        onClick={handleBack}
-                    >
-                        Home
-                    </div>
+                    <span id="countdown mx-2"> {countdown}</span> seconds 
                 </div>
             </div>
         </div>

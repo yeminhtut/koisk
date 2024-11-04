@@ -3,11 +3,13 @@ import { useNavigate } from "react-router";
 import axios from "axios";
 import { Button } from "primereact/button";
 import { Toast } from "primereact/toast";
+import { InputText } from "primereact/inputtext";
+import { Divider } from "primereact/divider";
+import { Dialog } from "primereact/dialog";
 import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
 import storage from "../../../utils/storage";
 import ImageIcon from "../../../components/ImageIcon";
 import OrderConfirmation from "./OrderConfirmation";
-import AdsArea from "./AdsArea";
 
 const { END_POINT: URL, AuthorizationHeader } = window?.config || {};
 
@@ -29,7 +31,6 @@ const ConfirmOrder = () => {
     const [orderNumber, setOrderNumber] = useState("");
     const signonid = storage.get("signonid");
     const [isDeviceActive, setIsDeviceActive] = useState(false);
-    const [socketUrl, setSocketUrl] = useState();
     const [currentIdx, setCurrentIdx] = useState();
     const devices = JSON.parse(storage.get("registeredDeviceData"));
     const [isSubmitted, setIsSubmitted] = useState(false);
@@ -38,14 +39,21 @@ const ConfirmOrder = () => {
     const [isLoadingEft, setIsLoadingEft] = useState(false);
     const timeOutTime = storage.get("payTimeOut");
 
+    const [visible, setVisible] = useState(false);
+
+    const closeDialog = () => {
+        setVisible(false);
+    };
+
     useEffect(() => {
         getTerminalTenders();
+        //getDeviceStatus();
     }, []);
 
     useEffect(() => {
         const { items } = cartDetail;
         if (items && items.length < 1) {
-            navigate("/item-listing", { replace: true });
+            navigate("/", { replace: true });
         }
     }, [cartDetail]);
 
@@ -68,7 +76,6 @@ const ConfirmOrder = () => {
             .then((response) => {
                 if (response.status === 200 && response.data) {
                     const { clientid, socketurl } = response.data;
-                    setSocketUrl(socketurl);
                     getEft();
                     handleWebSocket(socketurl, timer);
                 }
@@ -113,7 +120,6 @@ const ConfirmOrder = () => {
             .request(config)
             .then((response) => {
                 const result = response.data;
-                console.log("result are", result);
                 const deviceStatus = result.find((r) => r.deviceid == eft);
                 if (deviceStatus && deviceStatus.status === "Active") {
                     setIsDeviceActive(true);
@@ -190,10 +196,9 @@ const ConfirmOrder = () => {
 
     const handlePayment = () => {
         setIsSubmitted(true);
-        if (selectedMethod === "cash") {
+        if (selectedMethod.toLowerCase() === "cash") {
             return handleCashPayment();
         } else {
-            getDeviceStatus();
             const timeOut = timeOutTime > 0 ? timeOutTime * 1000 : timeOutTime;
             if (isDeviceActive) {
                 setIsLoadingEft(true);
@@ -256,7 +261,6 @@ const ConfirmOrder = () => {
                 setIsLoadingEft(false);
                 clearTimeout(timer);
             } else {
-                console.log("Transaction Successful");
                 successEftRes();
                 setIsLoadingEft(false);
                 clearTimeout(timer);
@@ -373,7 +377,7 @@ const ConfirmOrder = () => {
             const { cartid, orderid } = cartDetail;
             const closeData = {
                 orderid,
-                signonid,
+                //signonid,
                 terminalid,
             };
 
@@ -395,8 +399,6 @@ const ConfirmOrder = () => {
         }
     };
 
-    const handleClearCart = () => {};
-
     const clearCart = async () => {
         try {
             const { cartid, orderid } = cartDetail;
@@ -412,7 +414,7 @@ const ConfirmOrder = () => {
                 },
             );
             storage.remove("currCart");
-            navigate("/item-listing", { replace: true });
+            navigate("/", { replace: true });
         } catch (error) {
             console.error("Error voiding cart:", error);
         }
@@ -506,8 +508,7 @@ const ConfirmOrder = () => {
                     />
                 </div>
             )}
-            <div className="flex" style={{ height: "100vh" }}>
-                <AdsArea />
+            <div className="flex w-full" style={{ height: "100vh" }}>
                 <div className="p-4 w-full">
                     <div className="flex align-items-center justify-content-between mb-4">
                         <div className="flex">
@@ -556,7 +557,7 @@ const ConfirmOrder = () => {
                                     {tenderTypes.map((tender, i) => (
                                         <div
                                             key={i}
-                                            className={`col-4 justify-content-center align-items-center mr-4 p-4 payment-option 
+                                            className={`col-4 justify-content-center align-items-center mr-2 p-4 payment-option 
                                         ${selectedMethod === tender ? "selected" : ""}`}
                                             onClick={() =>
                                                 handleSelection(tender)
@@ -570,14 +571,14 @@ const ConfirmOrder = () => {
 
                             <Button
                                 type="button"
-                                className="w-full"
+                                className="w-full p-4"
                                 style={{
-                                    backgroundColor: "#78838E",
+                                    backgroundColor: "#51545D",
                                     color: "#FFF",
-                                    fontSize: "32px",
+                                    fontSize: "18px",
                                 }}
-                                onClick={handlePayment}
-                                label={`Pay P${cartDetail.totalamount?.toFixed(2)}`}
+                                onClick={checkMember}
+                                label={`Pay ₱${cartDetail.totalamount?.toFixed(2)}`}
                                 disabled={isSubmitted}
                             />
                         </div>
@@ -586,6 +587,15 @@ const ConfirmOrder = () => {
             </div>
         </>
     );
+
+    const handleDialog = () => {
+        closeDialog();
+        handlePayment();
+    };
+
+    const checkMember = () => {
+        setVisible(true);
+    };
 
     const accept = () => {
         clearCart();
@@ -605,6 +615,38 @@ const ConfirmOrder = () => {
         });
     };
 
+    const [ memberEmail, setMemberEmail ] = useState()
+
+    const handleChangeEmail = (e) => {
+        console.log('go', e.target.value)
+        setMemberEmail(e.target.value)
+    }
+
+    const handleMember = () => {
+        let config = {
+            method: 'get',
+            maxBodyLength: Infinity,
+            url: `${URL}/crm/v1/member/search?search_field=emailid&search_condi=eq&search_value=${memberEmail}`,
+            headers: { 
+                'Authorization': 'test'
+            }
+        };
+
+        axios.request(config)
+        .then((response) => {
+            if (response.status == 200) {
+                console.log('go there')
+            }
+            else {
+                console.log('show error')
+            }
+        })
+        .catch((error) => {
+            console.log(error);
+        });
+
+    }
+
     return (
         <>
             <Toast ref={toast} />
@@ -616,6 +658,55 @@ const ConfirmOrder = () => {
                     handleBack={handleBack}
                 />
             )}
+            <Dialog
+                visible={visible}
+                onHide={closeDialog}
+                header="place order with an account"
+                style={{ width: "350px" }}
+                className="order-dialog"
+                draggable={false}
+                modal
+            >
+                <div className="order-form-container">
+                    <label htmlFor="email" className="email-label mb-2">
+                        email address
+                    </label>
+                    <InputText
+                        id="email"
+                        className="email-input w-full mt-4"
+                        placeholder="ja12_123@gmail.com"
+                        onChange={handleChangeEmail}
+                    />
+                    <Button
+                        type="button"
+                        className="w-full mt-2"
+                        style={{
+                            backgroundColor: "#51545D",
+                            color: "#FFF",
+                            fontSize: "18px",
+                        }}
+                        onClick={handleMember}
+                        label="done"
+                    />
+
+                    <Divider align="center">
+                        <span>OR</span>
+                    </Divider>
+
+                    <p className="signup-text text-center">
+                        <a href="#" className="signup-link">
+                            sign up
+                        </a>{" "}
+                        for a free voucher
+                    </p>
+
+                    <p className="skip-link text-right">
+                        <a href="#" onClick={handleDialog}>
+                            skip
+                        </a>
+                    </p>
+                </div>
+            </Dialog>
         </>
     );
 };
@@ -626,8 +717,9 @@ const OrderItem = ({
     increaseOrderItem,
     decreaseOrderItem,
     items,
-    confirmClearCart
+    confirmClearCart,
 }) => {
+    const { addons } = item;
     const [quantity, setQuantity] = useState(item.quantity);
 
     const increaseItemQty = () => {
@@ -636,48 +728,58 @@ const OrderItem = ({
     };
 
     const decreaseItemQty = () => {
-        if (quantity > 1) {
-            setQuantity(quantity - 1);
+        const currQty = quantity - 1;
+        if (currQty == 0) {
+            removeOrderItem(item);
+        } else {
+            setQuantity(currQty);
             decreaseOrderItem(item);
         }
     };
 
     const handleRemoveItem = (item) => {
-        //removeOrderItem(item)
         if (items.length == 1) {
-            confirmClearCart()
+            confirmClearCart();
+        } else {
+            removeOrderItem(item);
         }
-        else {
-            removeOrderItem(item)
+    };
+
+    const getItemAddon = () => {
+        const resultArr = addons.map((ao) => ao.description);
+        if (resultArr.length > 0) {
+            return resultArr.join(", ");
         }
-    }
+        return "";
+    };
 
     const cartArea = () => {
         return (
             <>
-                <ConfirmDialog />
                 <div className="flex mb-4 align-items-center">
-                <div className="col">
-                    <h4 className="m-0 text-xl">{item.description}</h4>
-                    {/* <p className="m-0">{item.description}</p> */}
-                </div>
-                <div className="col">
-                    <div className="order-selector flex justify-content-center align-items-center my-2">
-                        <button onClick={decreaseItemQty}>-</button>
-                        <span className="mx-4">{quantity}x</span>
-                        <button onClick={increaseItemQty}>+</button>
+                    <div className="col">
+                        <h4 className="m-0 text-xl">{item.description}</h4>
+                        <p className="m-0">{getItemAddon()}</p>
                     </div>
-                </div>
-                <div className="col text-right">{item.totalamount}</div>
-                <div className="col text-right pr-0 flex justify-content-end">
+                    <div className="col">
+                        <div className="order-selector flex justify-content-center align-items-center my-2">
+                            <button onClick={() => decreaseItemQty(item)}>
+                                -
+                            </button>
+                            <span className="mx-4">{quantity}x</span>
+                            <button onClick={increaseItemQty}>+</button>
+                        </div>
+                    </div>
+                    <div className="col text-right">{item.totalamount}</div>
+                    {/* <div className="col text-right pr-0 flex justify-content-end">
                     <Button
                         label="Remove"
                         onClick={() => handleRemoveItem(item)}
                         severity="danger"
                         text
                     />
+                </div> */}
                 </div>
-            </div>
             </>
         );
     };

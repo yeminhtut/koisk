@@ -45,7 +45,8 @@ const LoginForm = (props) => {
     };
 
     return (
-        <div className="p-4 w-full lg:w-9">
+        <div className="p-4 w-full">
+            <div>
             <span className="text-900 text-2xl font-medium mb-4 block text-center mb-5">
                 Login
             </span>
@@ -115,6 +116,7 @@ const LoginForm = (props) => {
                         2024 © Toshiba Global Commerce Solutions
                     </span>
                 </div>
+            </div>
             </div>
         </div>
     );

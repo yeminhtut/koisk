@@ -1,6 +1,6 @@
 /*local storage misc */
 
-const tokenName = 'session'
+const tokenName = 'token'
 
 const isLocalStorageAvailable = () => {
     try {

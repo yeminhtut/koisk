@@ -23,22 +23,19 @@ const WelcomeComponent = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const [bgImg, setBgImg] = useState(
-        "http://tgcs-dev4.tgcs-elevate.com:9000/media/start-page_2560x1600.jpg",
+        "https://res.cloudinary.com/xenova/image/upload/c_fill,w_1024,h_768/v1729664892/ad-page_1280x1600_mtkdtw.jpg",
     );
     const toast = useRef(null);
     const [storeid, setStoreId] = useState(storage.get("storeid"));
     const [terminalid, setTerminalId] = useState(storage.get("terminalid"));
     const [isLocked, setIsLocked] = useState(false);
 
-    // useEffect(() => {
-    //     if (!storeid || !terminalid) {
-    //         toast.current.show({
-    //             severity: "info",
-    //             summary: "Info",
-    //             detail: "Please configure storeid and terminalid",
-    //         });
-    //     }
-    // }, []);
+    useEffect(() => {
+        const token = storage.get('token');
+        if (!token) {
+            navigate('/auth', { replace: true });
+        }
+    }, [navigate]);
 
     useEffect(() => {
         if (storeId) {
@@ -63,8 +60,8 @@ const WelcomeComponent = () => {
         try {
             await getSignOnId();
             await getPrinterConfig();
-            await getTerminalBirInfo();
-            await getBirInfo();
+            //await getTerminalBirInfo();
+            //await getBirInfo();
             await getImage();
         } catch (error) {
             console.error("Error fetching data", error);
@@ -90,7 +87,7 @@ const WelcomeComponent = () => {
                     storage.set("payTimeOut", paymenttimeout)
                     if (sco) {
                         const { start_page } = JSON.parse(sco);
-                        setBgImg(start_page ? start_page : TouchImage);
+                        //setBgImg(start_page ? start_page : TouchImage);
                         storage.set("categoryCode", quicklookupcatcode);
                     }
                 }
@@ -240,10 +237,11 @@ const WelcomeComponent = () => {
                 style={{ backgroundImage: `url(${bgImg})` }}
             >
                 <div className="layer"></div>
-                <div
+                {/* <div
                     className="flex flex-column justify-center"
                     style={{ zIndex: 1 }}
-                ></div>
+                ></div> */}
+                {/* <img src={bgImg} alt="" /> */}
             </div>
         </>
     );

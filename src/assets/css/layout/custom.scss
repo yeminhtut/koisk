@@ -1,3 +1,12 @@
+@font-face {
+  font-family: 'BrownTT-Light';
+  src: url('../../fonts/BROWNTT-LIGHT.TTF') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+html {
+  font-family: 'BrownTT-Light';
+}
 .start-button {
     background-color: #51545D;
     color: #FFF;
@@ -79,11 +88,6 @@
     font-size: 20px;
 }
 
-.menu-tabs li.active {
-    border-bottom: 2px solid #FFC107; /* Yellow color for active tab */
-    color: #FFC107;
-}
-
 .menu-content {
     display: flex;
     flex-direction: column;
@@ -93,13 +97,6 @@
 .menu-item {
     display: flex;
     gap: 15px;
-}
-
-.menu-item-image {
-    width: 150px;
-    height: 150px;
-    object-fit: cover;
-    border-radius: 8px;
 }
 
 .menu-item-details h3 {
@@ -361,11 +358,6 @@ font-weight: 300;
   cursor: pointer;
 }
 
-.menu-tabs li.active {
-  color: #fdbb00;
-  border-bottom: 2px solid #fdbb00;
-}
-
 .menu-items {
   flex: 1;
   overflow-y: auto;
@@ -378,10 +370,6 @@ font-weight: 300;
 
 .menu-item-details {
   flex: 1;
-}
-
-.menu-item-details h3 {
-  margin: 0 0 5px;
 }
 
 .menu-item-price {
@@ -446,29 +434,13 @@ font-weight: 300;
   cursor: pointer;
 }
 
-.menu-tabs li.active {
-  color: #fdbb00;
-  border-bottom: 2px solid #fdbb00;
-}
-
 .menu-item {
   display: flex;
   margin-bottom: 15px;
 }
 
-.menu-item-image {
-  width: 100px;
-  height: 100px;
-  object-fit: cover;
-  margin-right: 15px;
-}
-
 .menu-item-details {
   flex: 1;
-}
-
-.menu-item-details h3 {
-  margin: 0 0 5px;
 }
 
 .menu-item-price {
@@ -512,18 +484,15 @@ font-weight: 300;
 }
 
 .menu-item-image {
-  width: 100px;
-  height: 100px;
+  width: 80px;
+  height: 80px;
   object-fit: cover;
   margin-right: 15px;
+  border-radius: 8px;
 }
 
 .menu-item-details {
   flex: 1;
-}
-
-.menu-item-details h3 {
-  margin: 0 0 5px;
 }
 
 .menu-item-price {
@@ -536,7 +505,7 @@ font-weight: 300;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  opacity: 0;
+  //opacity: 0;
   transition: opacity 1s ease-in-out;
 }
 
@@ -585,6 +554,171 @@ font-weight: 300;
   left: 50%;
   transform: translate(-50%, -50%);
 }
+
+.hidden-checkbox {
+  display: none;
+}
+
+.custom-checkbox {
+  display: inline-block;
+  cursor: pointer;
+}
+
+.checkmark {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #ccc; 
+  position: relative;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.checked {
+  border-color: #B39137; /* Make the border match the checkmark */
+}
+
+.checked::after {
+  content: "";
+    position: absolute;
+    top: 3px;
+    left: 7px;
+    width: 7px;
+    height: 12px;
+    border: solid #B39137;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.custom-radio {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.hidden-radio {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.radiomark {
+  position: relative;
+  height: 24px;
+  width: 24px;
+  border-radius: 50%;
+  border: 2px solid #ccc;
+  display: inline-block;
+  transition: background-color 0.3s ease;
+}
+
+.radiomark.checked {
+  border: 2px solid #B39137; /* Change this to your preferred checked color */
+}
+
+.custom-radio:hover .radiomark {
+  border-color: #999; /* Adds a hover effect */
+}
+
+
+/* CSS for making the image sticky */
+.left-image {
+  position: sticky;
+  top: 10px; /* Adjust the value based on your layout */
+  align-self: flex-start;
+  max-width: 100%; /* Make sure it doesn't overflow */
+}
+
+/* CSS for making the top categories sticky */
+.top-categories {
+  position: sticky;
+  top: 0;
+  z-index: 1000; /* Ensure it stays above the content */
+  background-color: white; /* Ensure it's readable against content below */
+  padding: 10px 0;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Optional: Add some shadow for better visibility */
+}
+
+/* Container for the whole app */
+.app-container {
+  display: flex;
+  height: 100vh;
+}
+
+/* Left Sidebar */
+.sidebar {
+  background-color: #f4f4f4;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+/* Right Content Area */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Sticky Top Bar */
+.top-bar {
+  background-color: #fff;
+  padding: 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Scrollable Chat Area */
+.chat-area {
+  flex: 1;
+  overflow-y: auto;
+  height: calc(100vh - 50px); /* Adjust height to leave space for sticky top bar */
+}
+
+
+.top-bar-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.tabs {
+  display: flex;
+  justify-content: space-around;
+}
+
+.menu-tab {
+  padding: 10px;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.active-tab {
+  font-weight: bold;
+  border-bottom: 2px solid orange;
+}
+
+.category-content {
+  padding: 20px;
+  background-color: #fafafa;
+}
+
+.menu-tab {
+  font-size: 20px;
+}
+
+.floating-home-button {
+  position: fixed !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  z-index: 9999 !important;
+}
+
+
+
 
 
 

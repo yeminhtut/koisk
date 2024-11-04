@@ -1,33 +1,49 @@
-import React from 'react';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import LoginContainer from './modules/auth/container/LoginContainer';
-import AccessControl from './modules/auth/component/AccessControl';
-import ConfirmOrder from './modules/dashboard/component/ConfirmOrder';
-import WelcomeContainer from './modules/welcome/container/WelcomeContainer';
-import OrderConfirmation from './modules/dashboard/component/OrderConfirmation';
-import ProductList from './modules/dashboard/component/ProductList';
-import WelcomeComponent from './modules/welcome/component/Welcome';
+import React from "react";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import AccessControl from "./modules/auth/component/AccessControl";
+import ConfirmOrder from "./modules/dashboard/component/ConfirmOrder";
+import OrderConfirmation from "./modules/dashboard/component/OrderConfirmation";
+import ProductList from "./modules/dashboard/component/ProductList";
+import WelcomeComponent from "./modules/welcome/component/Welcome";
+import Layout from "./Layout";
+import ProductListContainer from "./modules/dashboard/container/ProductListContainer";
+import LoginContainer from "./modules/auth/container/LoginContainer";
 
-// const AuthRequiredContainer = () => {
-//     return (
-//         <>
-//             <AccessControl>
-//                 <Routes>
-                    
-//                 </Routes>
-//             </AccessControl>
-//         </>
-//     );
-// };
+const AuthRequiredContainer = () => {
+    return <LayoutContainer />;
+};
+
+const LayoutContainer = () => {
+    return (
+        <AccessControl>
+            <Layout>
+                <Routes>
+                    <Route path="/confirm-order" element={<ConfirmOrder />} />
+                    <Route
+                        path="/item-listing"
+                        element={<ProductListContainer />}
+                    />
+                    <Route
+                        path="/payment-success"
+                        element={<OrderConfirmation />}
+                    />
+                </Routes>
+            </Layout>
+        </AccessControl>
+    );
+};
 
 const AppRoutes = () => (
     <BrowserRouter>
         <Routes>
-            <Route path="/:storeId/:terminalId" element={<WelcomeComponent />} />
+            {/* <Route element={<LayoutContainer />} path="/*" /> */}
+            <Route
+                path="/:storeId/:terminalId"
+                element={<WelcomeComponent />}
+            />
             <Route path="/" element={<WelcomeComponent />} />
-            <Route path="/confirm-order" element={<ConfirmOrder />} />
-            <Route path="/item-listing" element={<ProductList />} />
-            <Route path="/payment-success" element={<OrderConfirmation />} />
+            <Route path="/auth" element={<LoginContainer />} />
+            <Route element={<AuthRequiredContainer />} path="/*" />
         </Routes>
     </BrowserRouter>
 );

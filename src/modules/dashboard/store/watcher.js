@@ -13,7 +13,7 @@ function* watchProductGetAllRequest() {
             const { categorycodes, storeid} = action.payload
             yield* querySaga(
                 action,
-                `/sales/v1/product-search/fields?categorycodes=${categorycodes}&language=en&pageno=1&pagesize=100&segment=T1&sort=sortorder&status=Active&stopsell=N&storeid=${storeid}`,
+                `/sales/v1/product-search/fields?categorycodes=${categorycodes}&storeid=${storeid}`,
                 appActions.PRODUCT_GET_ALL_SUCCESS,
                 appActions.PRODUCT_GET_ALL_FAILURE,
             );

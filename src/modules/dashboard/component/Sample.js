@@ -1,52 +1,44 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Checkbox } from "primereact/checkbox";
 import { Divider } from "primereact/divider";
 import { Toast } from "primereact/toast";
 import { RadioButton } from "primereact/radiobutton";
-import appActions from "../../../appActions";
-import storage from "../../../utils/storage";
 import ImageIcon from "../../../components/ImageIcon";
-import AdsArea from "./AdsArea";
+import storage from "../../../utils/storage";
+import appActions from "../../../appActions";
 
 const URL = window?.config?.END_POINT;
 
-const ProductList = () => {
+const SampleComponent = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState("coffee");
-    const [isDetail, setIsDetail] = useState(false);
-    const [selectedItem, setSelectedItem] = useState({});
-    const [cartDetail, setCartDetail] = useState({});
-    const [currCart, setCurrCart] = useState({});
-    const [order, setOrder] = useState();
-    const [productGroups, setProductGroups] = useState();
-    const [menuItems, setMenuItems] = useState([]);
+
+    const [activeTab, setActiveTab] = useState(0); // Track active tab
+    const contentRef = useRef(null);
     const storeid = storage.get("storeid");
     const terminalid = storage.get("terminalid");
+    
+    const [productGroups, setProductGroups] = useState();
+    const [menuItems, setMenuItems] = useState([]);
+    const [selectedItem, setSelectedItem] = useState({});
+    const [productItems, setProductItems] = useState([])
+    const [isDetail, setIsDetail] = useState(false);
+    const [order, setOrder] = useState();
+    const [cartDetail, setCartDetail] = useState({});
+    const [currCart, setCurrCart] = useState({});
 
     const productList = useSelector((state) => state.product.productList);
 
     useEffect(() => {
-        if (!storeid && !terminalid) {
-            navigate("/");
+        if (contentRef.current) {
+            contentRef.current.scrollTop = 0;
         }
-    }, [storeid, terminalid]);
+    }, [activeTab]);
 
-    // Fetch current cart from local storage on component mount
     useEffect(() => {
-        const storedCart = storage.get("currCart");
-        if (storedCart) {
-            const cart = JSON.parse(storedCart);
-            if (cart?.cartid) setCurrCart(cart);
-        }
-    }, []);
-
-    // Fetch all products when the component mounts
-    useEffect(() => {
-        const catCode = storage.get("categoryCode")
+        const catCode = storage.get("categoryCode");
         if (storeid && catCode) {
             const defaultParams = {
                 language: "en",
@@ -60,19 +52,14 @@ const ProductList = () => {
         }
     }, [dispatch, storeid]);
 
-    // Fetch cart details when current cart changes
-    useEffect(() => {
-        if (currCart?.cartid) {
-            const { cartid, orderid } = currCart;
-            let sessionid = storage.get("sessionid") || currCart.sessionid;
-            getCartBySession(cartid, orderid, sessionid);
-        }
-    }, [currCart]);
-
     useEffect(() => {
         const uniqueProductGroups = [
             ...new Set(productList.map((product) => product.categorycodes)),
         ];
+
+        uniqueProductGroups.map((group) => {
+            getMenuName(group);
+        });
         setProductGroups(uniqueProductGroups);
         const result = uniqueProductGroups.map((product) => {
             return {
@@ -82,11 +69,91 @@ const ProductList = () => {
                 ),
             };
         });
-        setMenuItems(result);
-        setActiveTab(uniqueProductGroups[0]);
+        setProductItems(result);
     }, [productList]);
+    const [categoryGroup, setCategoryGroup] = useState([]);
 
-    console.log('hi', menuItems)
+
+    useEffect(() => {
+        const mergedArr = productItems.map(item => {
+            const match = categoryGroup.find(b => b.categorycodes === item.category);
+            return {
+                ...item,
+                title: match?.title || null,
+                sortorder: match?.sortorder || 0
+            };
+        }).sort((a, b) => a.sortorder - b.sortorder);
+       setMenuItems(mergedArr)
+    }, [productItems, categoryGroup])
+
+    const getMenuName = async (category) => {
+        const config = {
+            method: "get",
+            maxBodyLength: Infinity,
+            url: `${URL}/sales/v1/category/search/fields?categorycode=${category}`,
+            headers: {
+                Authorization: "test",
+            },
+        };
+
+        try {
+            const response = await axios.request(config); // Await the response here
+            if (response.status === 200) {
+                if (response.data.length > 0) {
+                    const { title, sortorder } = response.data[0];
+                    // Update state with the latest categoryGroup
+                    setCategoryGroup((prevCategoryGroup) => [
+                        ...prevCategoryGroup,
+                        {
+                            title,
+                            categorycodes: category,
+                            sortorder
+                        }
+                    ]);
+                }
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const checkCartValue = () => !!(order?.orderid || currCart?.cartid);
+
+    const handleClose = () => setIsDetail(false);
+
+    const handleViewCart = () => {
+        if (cartDetail.itemcount > 0) {
+            navigate("/confirm-order", { replace: true });
+        }
+    };
+
+    // Handle scroll event to detect the bottom
+    const handleScroll = useCallback(() => {
+        const content = contentRef.current;
+        if (content.scrollTop + content.clientHeight >= content.scrollHeight) {
+            // Switch to the next category when scrolled to bottom
+            setActiveTab((prevTab) => (prevTab + 1) % menuItems.length);
+        }
+    }, [menuItems.length]);
+
+    const getImage = () =>
+        selectedItem.images
+            ? `${URL}/${selectedItem.images.productimageone}`
+            : `${process.env.PUBLIC_URL}/assets/images/ic_nonproduct.png`;
+
+    const handleSelectedItem = (item) => {
+                setIsDetail(true);
+                setSelectedItem(item);
+            };
+
+    const handleAddItem = (order, cartid) => {
+        const { sessionid, orderid } = order;
+        storage.set("sessionid", sessionid);
+        setSelectedItem({});
+        setOrder(order);
+        getCartBySession(cartid, orderid, sessionid);
+        setIsDetail(false);
+    };
 
     const getCartBySession = (cartid, orderid, sessionid) => {
         const config = {
@@ -104,74 +171,54 @@ const ProductList = () => {
             .catch((error) => console.error(error));
     };
 
-    const getImage = (item) =>
-        item.images
-            ? `${URL}/${item.images.productimageone}`
-            : `${process.env.PUBLIC_URL}/assets/images/ic_nonproduct.png`;
-
-    const handleSelectedItem = (item) => {
-        setIsDetail(true);
-        setSelectedItem(item);
-    };
-
-    const handleAddItem = (order, cartid) => {
-        const { sessionid, orderid } = order;
-        storage.set("sessionid", sessionid);
-        setSelectedItem({});
-        setOrder(order);
-        getCartBySession(cartid, orderid, sessionid);
-        setIsDetail(false);
-    };
-
-    const handleViewCart = () => {
-        if (cartDetail.itemcount > 0) {
-            navigate("/confirm-order", { replace: true });
-        }
-    };
-
-    const checkCartValue = () => !!(order?.orderid || currCart?.cartid);
-
-    const handleClose = () => setIsDetail(false);
-
     const productListing = () => {
         return (
             <>
-                <div className="menu-tabs">
-                    <ul>
-                        {menuItems.map((menu, index) => (
-                            <MenuHeaderItem
+                <div className="top-bar px-3">
+                    <div className="tabs">
+                        {menuItems.map((category, index) => (
+                            <button
                                 key={index}
-                                menu={menu}
-                                setActiveTab={setActiveTab}
-                                activeTab={activeTab}
-                            />
+                                className={
+                                    activeTab === index ? "active-tab menu-tab" : "menu-tab"
+                                }
+                                onClick={() => setActiveTab(index)}
+                            >
+                                {category.title}
+                            </button>
                         ))}
-                    </ul>
+                    </div>
                 </div>
-                {menuItems
-                    .find((menu) => menu.category === activeTab)
-                    ?.items.map((item, index) => (
-                        <div
-                            className="menu-item p-2 cursor-pointer"
-                            key={index}
-                            onClick={() => handleSelectedItem(item)}
-                        >
-                            <img
-                                src={getImage(item)}
-                                alt={item.name}
-                                className="menu-item-image"
-                            />
-                            <div className="menu-item-details">
-                                <h3>{item.additionalfields.title}</h3>
-                                <p className="mb-0">
-                                    {item?.articlefields?.description}
-                                </p>
-                                {/* <span className="menu-item-price">
-                                    {item.baseprice.toFixed(2)}
-                                </span> */}
-                            </div>
-                        </div>
-                    ))}
+                <div className="chat-area">
+                    <div
+                        className="category-content"
+                        ref={contentRef}
+                        onScroll={handleScroll}
+                        style={{ height: "100%", overflowY: "auto" }}
+                    >
+                        {menuItems &&
+                            menuItems[activeTab] &&
+                            menuItems[activeTab].items.map((item, index) => (
+                                <div
+                                    className="menu-item p-2 cursor-pointer"
+                                    key={index}
+                                    onClick={() => handleSelectedItem(item)}
+                                >
+                                    <img
+                                        src={getImage(item)}
+                                        alt={item.name}
+                                        className="menu-item-image"
+                                    />
+                                    <div className="menu-item-details">
+                                        <h3>{item.additionalfields.title}</h3>
+                                        <p className="mb-0">
+                                            {item?.articlefields?.description}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
+                    </div>
+                </div>
                 {(checkCartValue() || cartDetail?.cartid) && (
                     <div
                         className="fixed col-md-12 col-lg-6 cart-summary sticky-cart-summary add-to-order flex align-items-center justify-content-between p-4"
@@ -187,14 +234,23 @@ const ProductList = () => {
                     </div>
                 )}
             </>
-        );
-    };
+        )
+    }
 
     return (
-        <div className="flex w-full" style={{ minHeight: "100vh" }}>
-            <div className="menu-area">
-                <div className="menu-items" style={{ paddingBottom: "120px" }}>
-                    {isDetail ? (
+        // <div className="app-container">
+        //     {/* <div className="sidebar col-6 d-none d-md-block col-6 p-0">
+        //         <img
+        //             //src={leftImages[0]?.image}
+        //             src="https://res.cloudinary.com/xenova/image/upload/c_pad,w_512,h_768/v1729664892/ad-page_1280x1600_mtkdtw.jpg"
+        //             alt={`Ad`}
+        //             className={`ad-image sticky-image`}
+        //         />
+        //     </div> */}
+            
+        // </div>
+        <div className="main-content flex w-full">
+            {isDetail ? (
                         <ProductDetail
                             selectedItem={selectedItem}
                             handleAddItem={handleAddItem}
@@ -205,50 +261,7 @@ const ProductList = () => {
                     ) : (
                         productListing()
                     )}
-                </div>
             </div>
-        </div>
-    );
-};
-
-const MenuHeaderItem = (props) => {
-    const { menu, setActiveTab, activeTab } = props;
-    const { category } = menu;
-    const [menuName, setMenuName] = useState('');
-    useEffect(() => {
-        const getMenuName = async () => {
-            let config = {
-                method: "get",
-                maxBodyLength: Infinity,
-                url: `${URL}/sales/v1/category/search/fields?categorycode=${category}`,
-                headers: {
-                    Authorization: "test",
-                },
-            };
-
-            try {
-                const response = await axios.request(config);
-                if (response.status === 200) {
-                    if (response.data.length > 0) {
-                        const { title } = response.data[0];
-                        setMenuName(title); // Update the state with the description
-                    }
-                }
-            } catch (error) {
-                console.error(error);
-            }
-        };
-
-        getMenuName(); // Call the async function
-    }, [category]); // Depend on the category to re-fetch if it changes
-
-    return (
-        <li
-            className={activeTab === menu.category ? "active" : ""}
-            onClick={() => setActiveTab(menu.category)}
-        >
-            {menuName} {/* Display the fetched menu name */}
-        </li>
     );
 };
 
@@ -264,6 +277,8 @@ const ProductDetail = ({
     const [quantity, setQuantity] = useState(1);
     const [productAddons, setProductAddon] = useState([]);
     const [selectedOptions, setSelectedOptions] = useState([]);
+    const [totalPrice, setTotalPrice] = useState(0)
+    const [filteredProductAddon, setFilterAddon] = useState([])
 
     const handleCloseDetail = () => handleClose();
     const toast = useRef(null);
@@ -276,13 +291,26 @@ const ProductDetail = ({
     }, [selectedItem]);
 
     useEffect(() => {
+        const sumOfPrices = selectedOptions.reduce((sum, item) => sum + (item.price || 0), 0);
+        setTotalPrice(selectedItem.baseprice * quantity + sumOfPrices)
+    }, [selectedItem, quantity, selectedOptions])
+
+    useEffect(() => {
+        console.log('options', selectedOptions)
+        console.log('add', productAddons)
+        const customization = productAddons.filter(prod => prod.addgroup.title == 'customisation')
+        console.log('detect', customization)
+    }, [selectedOptions])
+
+    useEffect(() => {
         if (productAddons && productAddons.length > 0) {
             const output = productAddons.map((pao) => {
-                const { defaultSelected } = pao;
+                const { defaultSelected, itemidx } = pao;
                 if (defaultSelected && defaultSelected.id) {
                     const { groupid, productpricecode } = defaultSelected;
                     return {
                         [groupid]: productpricecode,
+                        itemidx
                     };
                 }
             });
@@ -410,7 +438,7 @@ const ProductDetail = ({
         };
     };
 
-    function groupAddon(data) {
+    const groupAddon = (data) => {
         if (data.addongroups && data.addons) {
             const addongroups = data.addongroups.reduce((addongroups, producta) => {
                 const brand1 = producta.groupid;
@@ -449,7 +477,7 @@ const ProductDetail = ({
         }
     }
 
-    const handleRadioOptionChange = (groupId, value) => {
+    const handleRadioOptionChange = (groupId, price, value, itemidx) => {
         setSelectedOptions((prevSelectedOptions) => {
             // Check if the key (groupId) already exists
             const existingIndex = prevSelectedOptions.findIndex(
@@ -459,12 +487,12 @@ const ProductDetail = ({
             // If the key exists, replace its value
             if (existingIndex !== -1) {
                 const updatedOptions = [...prevSelectedOptions];
-                updatedOptions[existingIndex] = { [groupId]: value };
+                updatedOptions[existingIndex] = { [groupId]: value, price, itemidx };
                 return updatedOptions;
             }
 
             // If the key doesn't exist, add the new key-value pair
-            return [...prevSelectedOptions, { [groupId]: value }];
+            return [...prevSelectedOptions, { [groupId]: value, price, itemidx }];
         });
     };
 
@@ -496,8 +524,20 @@ const ProductDetail = ({
         )
     }
 
+    const getParentGroup = (option) => {
+        //console.log('go', selectedOptions)
+        const { itemmap } = option
+        //console.log('this will detect', itemmap)
+        if (itemmap == undefined) {
+            return true
+        }
+        else {
+            //console.log('sele', selectedOptions)
+        }
+        return true
+    }
     return (
-        <div className="flex flex-column h-full">
+        <div className="chat-area" style={{ paddingBottom: '300px'}}>
             <Toast ref={toast} />
             <MenuItem
                 label={selectedItem.additionalfields.title}
@@ -519,43 +559,29 @@ const ProductDetail = ({
                                 className="field-radiobutton flex"
                             >
                                 {group.addgroup.title !== "customisation" && (
-                                    <RadioButton
-                                        inputId={`${group.addon}_${option.id}`}
-                                        name={group.addon}
-                                        value={option.productpricecode}
-                                        onChange={(e) =>
-                                            handleRadioOptionChange(
-                                                group.addon,
-                                                e.value,
-                                            )
-                                        }
-                                        checked={
-                                            selectedOptions.some((item) =>
-                                                Object.values(item).includes(
+                                    <label className="custom-radio">
+                                        <input
+                                            type="radio"
+                                            name={group.addon}
+                                            value={option.productpricecode}
+                                            checked={selectedOptions.some((item) =>
+                                                Object.values(item).includes(option.productpricecode),
+                                            )}
+                                            onChange={(e) =>
+                                                handleRadioOptionChange(
+                                                    group.addon,
+                                                    option.price,
                                                     option.productpricecode,
-                                                ),
-                                            )
-                                        }
-                                    />
+                                                    option.itemidx
+                                                )
+                                            }
+                                            className="hidden-radio"
+                                        />
+                                        <span className={`radiomark ${getChecked(option) ? 'checked' : ''}`}></span>
+                                    </label>
+
                                 )}
-                                {group.addgroup.title === "customisation" && (
-                                    // <Checkbox
-                                    //     inputId={`${group.addon}_${option.id}`}
-                                    //     name={group.addon}
-                                    //     value={option.productpricecode}
-                                    //     onChange={(e) =>
-                                    //         handleOptionChange(
-                                    //             group.addon,
-                                    //             e.checked,
-                                    //             option.productpricecode,
-                                    //         )
-                                    //     }
-                                    //     checked={selectedOptions.some((item) =>
-                                    //         Object.values(item).includes(
-                                    //             option.productpricecode,
-                                    //         ),
-                                    //     )}
-                                    // />
+                                {group.addgroup.title === "customisation" && getParentGroup(option) && (
                                     <label className="custom-checkbox">
                                         <input
                                             type="checkbox"
@@ -610,7 +636,8 @@ const ProductDetail = ({
                 >
                     <div className="w-full">
                         add to order ₱{" "}
-                        {(selectedItem.baseprice * quantity).toFixed(2)}
+                        {/* {(selectedItem.baseprice * quantity).toFixed(2)} */}
+                        {totalPrice.toFixed(2)}
                     </div>
                 </div>
             </div>
@@ -641,4 +668,4 @@ const MenuItem = ({ label, imgSrc, handleCloseDetail }) => {
     );
 };
 
-export default ProductList;
+export default SampleComponent;

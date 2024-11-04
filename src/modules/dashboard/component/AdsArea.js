@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useNavigate } from 'react-router-dom';
 import storage from "../../../utils/storage";
+import FloatingHomeButton from "../../../components/FloatingHomeButton";
 
 const { END_POINT: URL, AuthorizationHeader } = window?.config || {};
 
@@ -9,6 +11,8 @@ const AdsArea = () => {
     const [fade, setFade] = useState(true);
     const [leftImages, setLeftImages] = useState([]);
     const storeid = storage.get("storeid");
+    const navigate = useNavigate();
+
     useEffect(() => {
         getImages();
     }, []);
@@ -66,12 +70,16 @@ const AdsArea = () => {
         }
     }, [currentImageIndex, leftImages]);
 
+    const handleHomeClick = () => {
+      navigate('/'); // Navigate to your home page route
+  };
+
     return (
         <div
-            className="sticky-image-area col-6 d-none d-md-block col-6"
+            className="sidebar col-6 d-none d-md-block col-6 p-0"
             style={{ padding: "0px" }}
         >
-            <div className="ad-container">
+            {/* <div className="ad-container">
                 {leftImages.map((ad, index) => (
                     <img
                         key={index}
@@ -84,7 +92,16 @@ const AdsArea = () => {
                         }} // Only show the current image
                     />
                 ))}
+            </div> */}
+            <div className="ad-container">
+                <img
+                    //src={leftImages[0]?.image}
+                    src="https://res.cloudinary.com/xenova/image/upload/c_pad,w_512,h_768/v1729664892/ad-page_1280x1600_mtkdtw.jpg"
+                    alt={`Ad`}
+                    className={`ad-image sticky-image`}
+                />
             </div>
+            <FloatingHomeButton onHomeClick={handleHomeClick} />
         </div>
     );
 };

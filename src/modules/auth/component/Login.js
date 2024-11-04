@@ -25,8 +25,8 @@ const Login = () => {
         return (
             <div className="h-100">
                 <div className="grid h-100 mt-0">
-                    <div className="col-12 xl:col-6 left-space leftSpace" />
-                    <div className="col-12 xl:col-6 flex align-items-center justify-content-center">
+                    <div className="col-lg-6 col-xs-12 leftSpace" />
+                    <div className="col-lg-6 col-xs-12 noMargin noPadding">
                         <LoginForm onClickLoginBtn={handleLogin} error={error} />
                     </div>
                 </div>
