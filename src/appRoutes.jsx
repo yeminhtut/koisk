@@ -8,6 +8,7 @@ import WelcomeComponent from "./modules/welcome/component/Welcome";
 import Layout from "./Layout";
 import ProductListContainer from "./modules/dashboard/container/ProductListContainer";
 import LoginContainer from "./modules/auth/container/LoginContainer";
+import ProductMenu from "./modules/dashboard/component/Scroll";
 
 const AuthRequiredContainer = () => {
     return <LayoutContainer />;

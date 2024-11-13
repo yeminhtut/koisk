@@ -45,8 +45,8 @@ const LoginForm = (props) => {
     };
 
     return (
-        <div className="p-4 w-full">
-            <div>
+        <div className="w-full flex justify-content-center align-items-center" style={{ height: '100vh'}}>
+            <div style={{ width: '540px'}}>
             <span className="text-900 text-2xl font-medium mb-4 block text-center mb-5">
                 Login
             </span>

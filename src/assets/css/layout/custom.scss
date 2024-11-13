@@ -686,6 +686,10 @@ font-weight: 300;
 
 .tabs {
   display: flex;
+    overflow-x: auto;
+    white-space: nowrap;
+    padding: 0 10px; /* Optional: Add padding for a better scrollable experience */
+    scrollbar-width: none; /* Hide scrollbar in Firefox */
   justify-content: space-around;
 }
 
@@ -716,6 +720,63 @@ font-weight: 300;
   right: 20px !important;
   z-index: 9999 !important;
 }
+
+.scrollable {
+  overflow: auto;
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+/*scroll*/
+.product-menu {
+  display: flex;
+  flex-direction: column;
+}
+
+.category-bar {
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 10;
+  overflow-x: auto;
+  white-space: nowrap;
+  padding: 10px 0;
+  border-bottom: 1px solid #ddd;
+}
+
+.category-container {
+  display: flex;
+  gap: 20px;
+  padding: 0 10px;
+}
+
+.category-item {
+  cursor: pointer;
+  padding: 5px 10px;
+  color: gray;
+  font-weight: bold;
+}
+
+.category-item.active {
+  color: black;
+  border-bottom: 2px solid orange;
+}
+
+.product-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 20px 10px;
+}
+
+.product-item {
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
 
 
 

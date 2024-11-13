@@ -2,14 +2,12 @@ import React, { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Checkbox } from "primereact/checkbox";
 import { Divider } from "primereact/divider";
 import { Toast } from "primereact/toast";
 import { RadioButton } from "primereact/radiobutton";
 import appActions from "../../../appActions";
 import storage from "../../../utils/storage";
 import ImageIcon from "../../../components/ImageIcon";
-import AdsArea from "./AdsArea";
 
 const URL = window?.config?.END_POINT;
 
@@ -26,6 +24,7 @@ const ProductList = () => {
     const [menuItems, setMenuItems] = useState([]);
     const storeid = storage.get("storeid");
     const terminalid = storage.get("terminalid");
+    const currency = storage.get('currency')
 
     const productList = useSelector((state) => state.product.productList);
 
@@ -85,8 +84,6 @@ const ProductList = () => {
         setMenuItems(result);
         setActiveTab(uniqueProductGroups[0]);
     }, [productList]);
-
-    console.log('hi', menuItems)
 
     const getCartBySession = (cartid, orderid, sessionid) => {
         const config = {

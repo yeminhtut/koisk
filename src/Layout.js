@@ -1,6 +1,4 @@
 import React, { useState } from 'react'
-import Sidebar from './components/Sidebar'
-import Header from './components/Header';
 import AdsArea from './modules/dashboard/component/AdsArea';
 
 const Layout = props => {
@@ -8,7 +6,7 @@ const Layout = props => {
     return (
         <div className='wrapper'>
             <div id="content">
-                <div className='app-container'>
+                <div className='app-container' style={{ width: '100%', maxWidth: '100%', margin: '0px', padding: '0px'}}>
                     <AdsArea />
                     {children}
                 </div>

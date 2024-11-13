@@ -10,6 +10,7 @@ import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
 import storage from "../../../utils/storage";
 import ImageIcon from "../../../components/ImageIcon";
 import OrderConfirmation from "./OrderConfirmation";
+import withInactivityDetector from "../../../withInactivityDetector";
 
 const { END_POINT: URL, AuthorizationHeader } = window?.config || {};
 
@@ -29,7 +30,6 @@ const ConfirmOrder = () => {
     const [cartDetail, setCartDetail] = useState({});
     const [isSuccess, setIsSuccess] = useState(false);
     const [orderNumber, setOrderNumber] = useState("");
-    const signonid = storage.get("signonid");
     const [isDeviceActive, setIsDeviceActive] = useState(false);
     const [currentIdx, setCurrentIdx] = useState();
     const devices = JSON.parse(storage.get("registeredDeviceData"));
@@ -38,6 +38,7 @@ const ConfirmOrder = () => {
     const [selectedMethod, setSelectedMethod] = useState("cash");
     const [isLoadingEft, setIsLoadingEft] = useState(false);
     const timeOutTime = storage.get("payTimeOut");
+    const currency = storage.get('currency')
 
     const [visible, setVisible] = useState(false);
 
@@ -53,7 +54,9 @@ const ConfirmOrder = () => {
     useEffect(() => {
         const { items } = cartDetail;
         if (items && items.length < 1) {
+            storage.remove('currCart')
             navigate("/", { replace: true });
+            //confirmClearCart
         }
     }, [cartDetail]);
 
@@ -148,7 +151,8 @@ const ConfirmOrder = () => {
     const fetchCartDetails = async (newSession) => {
         try {
             const { data } = await axios.get(
-                `${URL}/pos/v1/cart/${cartid}/${orderid}?sessionid=${newSession ? newSession : sessionid}&status=sales`,
+                //`${URL}/pos/v1/cart/${cartid}/${orderid}?sessionid=${newSession ? newSession : sessionid}&status=sales`,
+                `${URL}/pos/v1/cart/${cartid}/${orderid}?status=sales`,
                 {
                     headers: {
                         Authorization: "test",
@@ -196,11 +200,12 @@ const ConfirmOrder = () => {
 
     const handlePayment = () => {
         setIsSubmitted(true);
-        if (selectedMethod.toLowerCase() === "cash") {
+        //handleCashPayment()
+        if (selectedMethod.title.toLowerCase() === "cash") {
             return handleCashPayment();
         } else {
             const timeOut = timeOutTime > 0 ? timeOutTime * 1000 : timeOutTime;
-            if (isDeviceActive) {
+            //if (isDeviceActive) {
                 setIsLoadingEft(true);
                 paymentSignOn();
                 const timer = setTimeout(() => {
@@ -215,13 +220,20 @@ const ConfirmOrder = () => {
                     });
                 }, timeOut); // 30 seconds in milliseconds
                 getWebSocket(timer);
-            }
+            // }
+            // else {
+            //     toast.current.show({
+            //         severity: "error",
+            //         summary: "Error",
+            //         detail: `Device is not active`,
+            //         life: 10000,
+            //     });
+            // }
         }
     };
 
     const handleWebSocket = (socketurl, timer) => {
         const { totalamount } = cartDetail;
-        const surl = "ws://localhost:8080";
         const ws = new WebSocket(socketurl);
         const uId = "EFT_" + new Date().getTime();
         const kioskId = "kiosk_" + storeid + "_" + terminalid;
@@ -237,6 +249,7 @@ const ConfirmOrder = () => {
             },
             message: {
                 amount: totalamount * 100,
+                cardtype: selectedMethod.tagtype
             },
         };
         // Connection opened
@@ -482,8 +495,11 @@ const ConfirmOrder = () => {
 
             if (response.status === 200 && Array.isArray(response.data)) {
                 const tenderTypes = response.data
-                    .map((r) => r.title)
-                    .filter(Boolean);
+                .map((r) => ({
+                    title: r.title,
+                    tagtype: r.tagtypevalue
+                }))
+                .filter(Boolean);
                 setTenderTypes(tenderTypes);
             } else {
                 toast.current.show({
@@ -504,7 +520,7 @@ const ConfirmOrder = () => {
                 <div className="overlay" id="overlay">
                     <ImageIcon
                         iconName={"loading.gif"}
-                        style={{ width: "150px", height: "150px" }}
+                        style={{ width: "300px", height: "300px" }}
                     />
                 </div>
             )}
@@ -530,7 +546,7 @@ const ConfirmOrder = () => {
                             Clear
                         </div>
                     </div>
-                    <div style={{ paddingBottom: "250px" }}>
+                    <div className="scrollable h-full" style={{ paddingBottom: "250px" }}>
                         <div className="mb-4">
                             <h3>Order Items</h3>
                             {cartDetail.items?.map((item, index) => (
@@ -548,7 +564,7 @@ const ConfirmOrder = () => {
                     </div>
                     {tenderTypes.length > 0 && (
                         <div
-                            className="p-0 w-full align-items-center justify-content-center fixed right-0 bottom-0 col-md-12 col-lg-6"
+                            className="p-0 align-items-center justify-content-center fixed right-0 bottom-0 col-12 md:col-6"
                             style={{ background: "#f9fafb" }}
                         >
                             <div className="mb-4">
@@ -563,7 +579,7 @@ const ConfirmOrder = () => {
                                                 handleSelection(tender)
                                             }
                                         >
-                                            {tender}
+                                            {tender.title}
                                         </div>
                                     ))}
                                 </div>
@@ -578,8 +594,8 @@ const ConfirmOrder = () => {
                                     fontSize: "18px",
                                 }}
                                 onClick={checkMember}
-                                label={`Pay ₱${cartDetail.totalamount?.toFixed(2)}`}
-                                disabled={isSubmitted}
+                                label={`Pay ${currency} ${cartDetail.totalamount?.toFixed(2)}`}
+                                disabled={isSubmitted || !selectedMethod.title}
                             />
                         </div>
                     )}
@@ -594,7 +610,8 @@ const ConfirmOrder = () => {
     };
 
     const checkMember = () => {
-        setVisible(true);
+        //setVisible(true);
+        handlePayment()
     };
 
     const accept = () => {
@@ -618,7 +635,6 @@ const ConfirmOrder = () => {
     const [ memberEmail, setMemberEmail ] = useState()
 
     const handleChangeEmail = (e) => {
-        console.log('go', e.target.value)
         setMemberEmail(e.target.value)
     }
 
@@ -715,9 +731,7 @@ const OrderItem = ({
     item,
     removeOrderItem,
     increaseOrderItem,
-    decreaseOrderItem,
-    items,
-    confirmClearCart,
+    decreaseOrderItem
 }) => {
     const { addons } = item;
     const [quantity, setQuantity] = useState(item.quantity);
@@ -737,14 +751,6 @@ const OrderItem = ({
         }
     };
 
-    const handleRemoveItem = (item) => {
-        if (items.length == 1) {
-            confirmClearCart();
-        } else {
-            removeOrderItem(item);
-        }
-    };
-
     const getItemAddon = () => {
         const resultArr = addons.map((ao) => ao.description);
         if (resultArr.length > 0) {
@@ -752,6 +758,11 @@ const OrderItem = ({
         }
         return "";
     };
+
+    const getTotalAmount = () => {
+        const totalSum = addons.reduce((sum, item) => sum + item.totalamount, 0);
+        return item.totalamount + totalSum
+    }
 
     const cartArea = () => {
         return (
@@ -770,7 +781,7 @@ const OrderItem = ({
                             <button onClick={increaseItemQty}>+</button>
                         </div>
                     </div>
-                    <div className="col text-right">{item.totalamount}</div>
+                    <div className="col text-right">{getTotalAmount().toFixed(2)}</div>
                     {/* <div className="col text-right pr-0 flex justify-content-end">
                     <Button
                         label="Remove"
@@ -788,3 +799,4 @@ const OrderItem = ({
 };
 
 export default ConfirmOrder;
+//export default withInactivityDetector(ConfirmOrder);

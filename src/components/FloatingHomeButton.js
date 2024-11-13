@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import Draggable from 'react-draggable';
 import { Button } from 'primereact/button';
 import { ConfirmDialog } from 'primereact/confirmdialog';
+import storage from '../utils/storage';
 
 const FloatingHomeButton = ({ onHomeClick }) => {
     const [isDragging, setIsDragging] = useState(false);
@@ -16,6 +17,10 @@ const FloatingHomeButton = ({ onHomeClick }) => {
         setIsDragging(true);
     };
 
+    const handleStop = () => {
+        setTimeout(() => setIsDragging(false), 100); // Reset isDragging after a short delay
+    };
+
     const handleClick = () => {
         if (!isDragging) {
             setDialogVisible(true); // Show dialog only if it was clicked, not dragged
@@ -25,6 +30,7 @@ const FloatingHomeButton = ({ onHomeClick }) => {
     const handleConfirm = () => {
         setDialogVisible(false);
         if (onHomeClick) {
+            storage.remove('currCart')
             onHomeClick();
         }
     };
@@ -35,7 +41,7 @@ const FloatingHomeButton = ({ onHomeClick }) => {
             <ConfirmDialog
                 visible={dialogVisible}
                 onHide={() => setDialogVisible(false)}
-                message="Do you want to clear the cart?"
+                message="Do you want to go back to home screen?"
                 header="Confirmation"
                 icon="pi pi-exclamation-triangle"
                 accept={handleConfirm}
@@ -43,7 +49,7 @@ const FloatingHomeButton = ({ onHomeClick }) => {
             />
 
             {/* Draggable button */}
-            <Draggable onStart={handleStart} onDrag={handleDrag}>
+            <Draggable onStart={handleStart} onDrag={handleDrag} onStop={handleStop}>
                 <div
                     style={{
                         position: 'fixed',

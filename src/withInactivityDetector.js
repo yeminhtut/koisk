@@ -3,14 +3,21 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import storage from './utils/storage';
 
-const withInactivityDetector = (WrappedComponent, inactivityTime = 60000, redirectTime = 30000) => {
+const { END_POINT: URL } = window?.config || {};
+
+const withInactivityDetector = (WrappedComponent) => {
     return (props) => {
         const timeoutRef = useRef(null);
         const redirectTimeoutRef = useRef(null);
         const [showDialog, setShowDialog] = useState(false);
         const navigate = useNavigate();
-
+        const inactivityTime = storage.get('inactiveTimeout') ? storage.get('inactiveTimeout') * 1000 : 60000
+        const redirectTime = storage.get('redirectTimeout') ? storage.get('redirectTimeout') * 1000 : 10000
+        
+        const [cartDetail, setCartDetail] = useState({});
         const resetInactivityTimer = () => {
             // Clear any existing timers
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -24,9 +31,39 @@ const withInactivityDetector = (WrappedComponent, inactivityTime = 60000, redire
                 // Set a redirect timer for after the dialog appears
                 redirectTimeoutRef.current = setTimeout(() => {
                     // Redirect to home if still inactive
-                    navigate('/home');
+                    
+                    const currCart = JSON.parse(storage.get('currCart'))
+                    if (currCart && currCart.cartid) {
+                        clearCart()
+                    }
+                    else {
+                        navigate('/');
+                    }
+                    
                 }, redirectTime);
             }, inactivityTime);
+        };
+
+        const clearCart = async () => {
+            const cart = JSON.parse(storage.get('currCart'))
+            const { cartid, orderid } = cart
+            try {
+                await axios.put(
+                    `${URL}/pos/v1/cart/${cartid}/cancel`,
+                    JSON.stringify({ orderid }),
+                    {
+                        headers: {
+                            Authorization: "test",
+                            "Content-Type": "application/json",
+                        },
+                        maxBodyLength: Infinity,
+                    },
+                );
+                storage.remove("currCart");
+                navigate("/", { replace: true });
+            } catch (error) {
+                console.error("Error voiding cart:", error);
+            }
         };
 
         const handleContinue = () => {
@@ -65,8 +102,6 @@ const withInactivityDetector = (WrappedComponent, inactivityTime = 60000, redire
         return (
             <>
                 <WrappedComponent {...props} />
-
-                {/* Inactivity Dialog */}
                 <Dialog
                     visible={showDialog}
                     header="Session Timeout"

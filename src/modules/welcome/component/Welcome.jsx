@@ -1,13 +1,11 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { useParams } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 import { Toast } from "primereact/toast";
 import appActions from "../../../appActions";
 import storage from "../../../utils/storage";
-import TouchImage from "../../../assets/icons/touch-bg.png";
 
 const { END_POINT: URL, AuthorizationHeader } = window?.config || {};
 
@@ -22,9 +20,8 @@ const WelcomeComponent = () => {
    // const { storeId, terminalId } = useParams();
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    const [bgImg, setBgImg] = useState(
-        "https://res.cloudinary.com/xenova/image/upload/c_fill,w_1024,h_768/v1729664892/ad-page_1280x1600_mtkdtw.jpg",
-    );
+    const TouchImage = 'http://188.166.220.103:9000/media/ph-lab-harlan/ad-page_1280x1600.jpg'
+    const [bgImg, setBgImg] = useState('http://188.166.220.103:9000/media/ph-lab-harlan/ad-page_1280x1600.jpg');
     const toast = useRef(null);
     const [storeid, setStoreId] = useState(storage.get("storeid"));
     const [terminalid, setTerminalId] = useState(storage.get("terminalid"));
@@ -61,7 +58,7 @@ const WelcomeComponent = () => {
             await getSignOnId();
             await getPrinterConfig();
             //await getTerminalBirInfo();
-            //await getBirInfo();
+            await getInteractiveConfig();
             await getImage();
         } catch (error) {
             console.error("Error fetching data", error);
@@ -87,7 +84,7 @@ const WelcomeComponent = () => {
                     storage.set("payTimeOut", paymenttimeout)
                     if (sco) {
                         const { start_page } = JSON.parse(sco);
-                        //setBgImg(start_page ? start_page : TouchImage);
+                        setBgImg(start_page ? start_page : TouchImage);
                         storage.set("categoryCode", quicklookupcatcode);
                     }
                 }
@@ -146,39 +143,24 @@ const WelcomeComponent = () => {
         }
     };
 
-    const getBirInfo = async () => {
+    const getInteractiveConfig = async () => {
         const config = {
             method: "get",
-            url: `${URL}/system/v1/store/tag/search/fields?storeid=${storeid}&taggroup=storeprops&tagtype=birinfo&status=Active`,
+            url: `${URL}/cms/v1/prop/config/search/fields?propcode=SCO_INACTIVE_TIMER`,
             headers: { Authorization: AuthorizationHeader },
         };
 
         try {
             const response = await axios.request(config);
-            localStorage.setItem(
-                "receiptStoreBIRInfoData",
-                JSON.stringify(response.data[0]?.additionalfields),
-            );
+            if (response.data.length > 0) {
+                const { additionalfields } = response.data[0]
+                const { INACTIVITY_TIME, REDIRECT_TIME } = additionalfields
+                storage.set('inactiveTimeout', INACTIVITY_TIME) 
+                storage.set('redirectTimeout', REDIRECT_TIME) 
+            }
+            
         } catch (error) {
             console.error("Error fetching Store BIR Info", error);
-        }
-    };
-
-    const getTerminalBirInfo = async () => {
-        const config = {
-            method: "get",
-            url: `${URL}/system/v1/store/tag/search/fields?taggroup=tprops&tagtype=birinfo&status=Active&storeid=${storeid}&terminalid=${terminalid}`,
-            headers: { Authorization: AuthorizationHeader },
-        };
-
-        try {
-            const response = await axios.request(config);
-            storage.set(
-                "receiptTerminalBIRInfoData",
-                JSON.stringify(response.data[0]?.additionalfields),
-            );
-        } catch (error) {
-            console.error("Error fetching Terminal BIR Info", error);
         }
     };
 
@@ -234,15 +216,19 @@ const WelcomeComponent = () => {
             <div
                 className="background cursor-pointer"
                 onClick={handleClick}
-                style={{ backgroundImage: `url(${bgImg})` }}
+                //style={{ backgroundImage: `url(${bgImg})` }}
             >
-                <div className="layer"></div>
-                {/* <div
-                    className="flex flex-column justify-center"
-                    style={{ zIndex: 1 }}
-                ></div> */}
-                {/* <img src={bgImg} alt="" /> */}
+                <div style={{ width: '100%', height: '100vh', overflow: 'hidden' }}>
+                    <img 
+                        src={bgImg}
+                        alt="" 
+                        style={{ width: '100vw', height: '100vh', objectFit: 'contain' }} 
+                    />
+                </div>
+                
             </div>
+            
+
         </>
     );
 };
