@@ -21,7 +21,7 @@ const WelcomeComponent = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const TouchImage = 'http://188.166.220.103:9000/media/ph-lab-harlan/ad-page_1280x1600.jpg'
-    const [bgImg, setBgImg] = useState('http://188.166.220.103:9000/media/ph-lab-harlan/ad-page_1280x1600.jpg');
+    const [bgImg, setBgImg] = useState();
     const toast = useRef(null);
     const [storeid, setStoreId] = useState(storage.get("storeid"));
     const [terminalid, setTerminalId] = useState(storage.get("terminalid"));
@@ -84,7 +84,7 @@ const WelcomeComponent = () => {
                     storage.set("payTimeOut", paymenttimeout)
                     if (sco) {
                         const { start_page } = JSON.parse(sco);
-                        setBgImg(start_page ? start_page : TouchImage);
+                        setBgImg(start_page ? start_page : '');
                         storage.set("categoryCode", quicklookupcatcode);
                     }
                 }
@@ -219,11 +219,14 @@ const WelcomeComponent = () => {
                 //style={{ backgroundImage: `url(${bgImg})` }}
             >
                 <div style={{ width: '100%', height: '100vh', overflow: 'hidden' }}>
-                    <img 
-                        src={bgImg}
-                        alt="" 
-                        style={{ width: '100vw', height: '100vh', objectFit: 'contain' }} 
-                    />
+                    {bgImg && (
+                        <img 
+                            src={bgImg}
+                            alt="" 
+                            style={{ width: '100vw', height: '100vh', objectFit: 'contain' }} 
+                        />
+                    )}
+                    
                 </div>
                 
             </div>

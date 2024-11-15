@@ -1,15 +1,29 @@
-import capitalize from 'lodash/capitalize'
-import { call, put } from 'redux-saga/effects';
-import { get, post, update, del } from '../utils/net'
+import capitalize from "lodash/capitalize";
+import { call, put } from "redux-saga/effects";
+import { get, post, update, del } from "../utils/net";
 
-const API_ACTION_TYPES = ['GET_ALL', 'GET', 'CREATE', 'DELETE', 'UPDATE', 'PATCH', 'EXPORT', 'IMPORT', 'DOWNLOAD', 'UPLOAD']
+const API_ACTION_TYPES = [
+    "GET_ALL",
+    "GET",
+    "CREATE",
+    "DELETE",
+    "UPDATE",
+    "PATCH",
+    "EXPORT",
+    "IMPORT",
+    "DOWNLOAD",
+    "UPLOAD",
+];
 
 export function generateActionTypes(entity, actions) {
     const actionTypes = {};
-    actions.forEach(action => {
-        actionTypes[`${entity}_${action}_REQUEST`] = `${entity}_${action}_REQUEST`;
-        actionTypes[`${entity}_${action}_SUCCESS`] = `${entity}_${action}_SUCCESS`;
-        actionTypes[`${entity}_${action}_FAILURE`] = `${entity}_${action}_FAILURE`;
+    actions.forEach((action) => {
+        actionTypes[`${entity}_${action}_REQUEST`] =
+            `${entity}_${action}_REQUEST`;
+        actionTypes[`${entity}_${action}_SUCCESS`] =
+            `${entity}_${action}_SUCCESS`;
+        actionTypes[`${entity}_${action}_FAILURE`] =
+            `${entity}_${action}_FAILURE`;
     });
     actionTypes[`${entity}_RESET_REQUEST`] = `${entity}_RESET_REQUEST`;
     actionTypes[`${entity}_RESET_SUCCESS`] = `${entity}_RESET_SUCCESS`;
@@ -17,66 +31,84 @@ export function generateActionTypes(entity, actions) {
 }
 
 export function getLoadingStateName(entityName, action) {
-    const actionName = action
-        .split('_')
-        .map(capitalize)
-        .join('')
-    return `isLoading${actionName}${capitalize(entityName)}`
+    const actionName = action.split("_").map(capitalize).join("");
+    return `isLoading${actionName}${capitalize(entityName)}`;
 }
-  
+
 export function getActionTypes(entity, actions) {
-    return generateActionTypes(entity.toUpperCase(), actions.map(action => action.toUpperCase()));
+    return generateActionTypes(
+        entity.toUpperCase(),
+        actions.map((action) => action.toUpperCase()),
+    );
 }
 
 export function generateDefaultState(entityName, actions) {
-    entityName = entityName.toLowerCase()
+    entityName = entityName.toLowerCase();
     return actions
-        .map(action => {
+        .map((action) => {
             if (API_ACTION_TYPES.indexOf(action.toUpperCase()) < 0) {
                 // eslint-disable-next-line no-console
-                console.warn(`Action name: ${action} is invalid.`)
+                console.warn(`Action name: ${action} is invalid.`);
             }
 
             return {
-                [getLoadingStateName(entityName, action)]: false
-            }
+                [getLoadingStateName(entityName, action)]: false,
+            };
         })
         .reduce(
             (result, action) => ({
                 ...result,
-                ...action
+                ...action,
             }),
             {
                 [entityName]: {},
-                [`${entityName}List`]: []
-            }
-        )
+                [`${entityName}List`]: [],
+            },
+        );
 }
 
-export function* crudSaga(action, endpoint, successAction, failureAction, method) {
+export function* crudSaga(
+    action,
+    endpoint,
+    successAction,
+    failureAction,
+    method,
+) {
     try {
-      let response;
-      if (method === 'POST') {
-        response = yield call(post, endpoint, action.payload);
-      } else if (method === 'PUT') {
-        const { id, ...rest } = action.payload;
-        response = yield call(update, `${endpoint}/${id}`, rest);
-      } 
-      else if (method === 'DELETE') {
-        const { id } = action.payload;
-        response = yield call(del, `${endpoint}/${id}`);
-      } 
-      yield put(successAction(response.data));
+        let response;
+        if (method === "POST") {
+            response = yield call(post, endpoint, action.payload);
+        } else if (method === "PUT") {
+            const { id, ...rest } = action.payload;
+            response = yield call(update, `${endpoint}/${id}`, rest);
+        } else if (method === "DELETE") {
+            const { id } = action.payload;
+            response = yield call(del, `${endpoint}/${id}`);
+        }
+        yield put(successAction(response.data));
+        // Check response status and handle success or error
+        if (
+            response?.status === 200 ||
+            response?.status === 201 ||
+            response?.status === 204
+        ) {
+            // Operation was successful
+            yield put(successAction(response.data));
+            //yield put(showToast('success', 'Success', message));
+        } else {
+            // Operation failed - treat any non-200 response as an error
+            yield put(failureAction(response));
+        }
     } catch (error) {
-      yield put(failureAction(error));
+        yield put(failureAction(error));
     }
-  }
+}
 
 export function* querySaga(action, endpoint, successAction, failureAction) {
     try {
-      const response = yield call(get, endpoint, { params: action.payload });
-      yield put(successAction(response.data));
+        const response = yield call(get, endpoint, { params: action.payload });
+        yield put(successAction(response.data));
     } catch (error) {
-      yield put(failureAction(error));
+        yield put(failureAction(error));
     }
-  }
+}

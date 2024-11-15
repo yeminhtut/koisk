@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from 'react-router-dom';
 import storage from "../../../utils/storage";
-import FloatingHomeButton from "../../../components/FloatingHomeButton";
+//import FloatingHomeButton from "../../../components/FloatingHomeButton";
 import adDefault from "../../../assets/images/ad-default.jpg"
 
 const { END_POINT: URL, AuthorizationHeader } = window?.config || {};
@@ -62,7 +62,7 @@ const AdsArea = () => {
                     className={`ad-image sticky-image`}
                 />
             </div>
-            <FloatingHomeButton onHomeClick={handleHomeClick} />
+            {/* <FloatingHomeButton onHomeClick={handleHomeClick} /> */}
         </div>
     );
 };

@@ -649,8 +649,8 @@ const ProductDetail = ({
 
             <div>
                 {productAddons &&
-                    productAddons.map((group) => (
-                        <div key={group.addon} className="field px-4">
+                    productAddons.map((group, i) => (
+                        <div key={group.addon}className="field px-4">
                             <h4>{group.addgroup.title}</h4>
                             {group.addons.map((option, index) => (
                                 <>

@@ -47,18 +47,20 @@ const ConfirmOrder = () => {
     };
 
     useEffect(() => {
-        getTerminalTenders();
-        //getDeviceStatus();
-    }, []);
-
-    useEffect(() => {
-        const { items } = cartDetail;
-        if (items && items.length < 1) {
-            storage.remove('currCart')
-            navigate("/", { replace: true });
-            //confirmClearCart
+        if (storeid && terminalid) {
+            getTerminalTenders();
         }
-    }, [cartDetail]);
+        //getDeviceStatus();
+    }, [storeid, terminalid]);
+
+    // useEffect(() => {
+    //     const { items } = cartDetail;
+    //     if (items && items.length < 1) {
+    //         storage.remove('currCart')
+    //         navigate("/", { replace: true });
+    //         //confirmClearCart
+    //     }
+    // }, [cartDetail]);
 
     const getWebSocket = (timer) => {
         let data = JSON.stringify({
@@ -151,8 +153,8 @@ const ConfirmOrder = () => {
     const fetchCartDetails = async (newSession) => {
         try {
             const { data } = await axios.get(
-                //`${URL}/pos/v1/cart/${cartid}/${orderid}?sessionid=${newSession ? newSession : sessionid}&status=sales`,
-                `${URL}/pos/v1/cart/${cartid}/${orderid}?status=sales`,
+                `${URL}/pos/v1/cart/${cartid}/${orderid}?sessionid=${newSession ? newSession : sessionid}&status=sales`,
+                //`${URL}/pos/v1/cart/${cartid}/${orderid}?status=sales`,
                 {
                     headers: {
                         Authorization: "test",
@@ -200,7 +202,6 @@ const ConfirmOrder = () => {
 
     const handlePayment = () => {
         setIsSubmitted(true);
-        //handleCashPayment()
         if (selectedMethod.title.toLowerCase() === "cash") {
             return handleCashPayment();
         } else {
@@ -435,17 +436,27 @@ const ConfirmOrder = () => {
 
     const handleBack = () => navigate("/item-listing", { replace: true });
 
-    const updateCartItem = async (item, quantity) => {
-        try {
-            const { idx } = item;
-            const { orderid, cartid } = cartDetail;
-            const data = {
-                orderid,
-                idx,
-                quantity,
-                addons: [],
-            };
+    const formattedOrders = (orders) => {
+        const result = orders.map(order => ({
+            orderid: order.orderid,
+            productpricecode: order.storeproductid 
+                ? `${order.storeproductid}-${order.productcode}`
+                : order.productcode,  // Use only `productcode` if `storeproductid` is missing
+            quantity: order.quantity
+        }));
+        return result
+    }
 
+    const updateCartItem = async (item, quantity) => {
+        const { idx, addons } = item;
+        const { orderid, cartid } = cartDetail;
+        const data = {
+            orderid,
+            idx,
+            quantity,
+            addons: formattedOrders(addons)
+        };
+        try {
             const repsonse = await axios.post(
                 `${URL}/pos/v1/cart/${cartid}/item`,
                 JSON.stringify(data),
@@ -465,9 +476,20 @@ const ConfirmOrder = () => {
         }
     };
 
-    const removeOrderItem = (item) => updateCartItem(item, 0);
+    const removeOrderItem = (item) => {
+        const { items } = cartDetail;
+        if (items && items.length == 1) {
+            confirmClearCart()
+        }
+        else {
+            updateCartItem(item, 0);
+        }
+    }
 
-    const increaseOrderItem = (item) => updateCartItem(item, item.quantity + 1);
+    const increaseOrderItem = (item) => {
+        //console.log('item is', item)
+        updateCartItem(item, item.quantity + 1);
+    }
 
     const decreaseOrderItem = (item) => {
         if (item.quantity > 1) {
@@ -514,6 +536,13 @@ const ConfirmOrder = () => {
         }
     };
 
+    const getBottomTotalAmount = () => {
+        return cartDetail.totalamount
+    };
+
+    const handleTotal = (amount) => {
+    }
+
     const CartView = () => (
         <>
             {isLoadingEft && (
@@ -528,9 +557,6 @@ const ConfirmOrder = () => {
                 <div className="p-4 w-full">
                     <div className="flex align-items-center justify-content-between mb-4">
                         <div className="flex">
-                            {/* <i className="pi pi-home" 
-                            style={{ marginRight: '10px', cursor: 'pointer', fontSize: '30px', color: '#807d7d' }} 
-                        /> */}
                             <div onClick={handleBack}>
                                 <ImageIcon
                                     iconName={"back_arrow.png"}
@@ -558,6 +584,7 @@ const ConfirmOrder = () => {
                                     decreaseOrderItem={decreaseOrderItem}
                                     items={cartDetail.items}
                                     confirmClearCart={confirmClearCart}
+                                    handleTotal={handleTotal}
                                 />
                             ))}
                         </div>
@@ -594,7 +621,7 @@ const ConfirmOrder = () => {
                                     fontSize: "18px",
                                 }}
                                 onClick={checkMember}
-                                label={`Pay ${currency} ${cartDetail.totalamount?.toFixed(2)}`}
+                                label={`Pay ${currency} ${getBottomTotalAmount()}`}
                                 disabled={isSubmitted || !selectedMethod.title}
                             />
                         </div>
@@ -731,7 +758,8 @@ const OrderItem = ({
     item,
     removeOrderItem,
     increaseOrderItem,
-    decreaseOrderItem
+    decreaseOrderItem,
+    handleTotal
 }) => {
     const { addons } = item;
     const [quantity, setQuantity] = useState(item.quantity);
@@ -760,9 +788,11 @@ const OrderItem = ({
     };
 
     const getTotalAmount = () => {
-        const totalSum = addons.reduce((sum, item) => sum + item.totalamount, 0);
-        return item.totalamount + totalSum
-    }
+        const { quantity, unitprice: itemTotalAmount } = item;
+        const addonsTotalSum = addons.reduce((sum, addon) => sum + addon.totalamount, 0);
+        return (itemTotalAmount + addonsTotalSum) * quantity;
+    };
+    
 
     const cartArea = () => {
         return (
