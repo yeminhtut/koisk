@@ -20,7 +20,6 @@ const WelcomeComponent = () => {
    // const { storeId, terminalId } = useParams();
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    const TouchImage = 'http://188.166.220.103:9000/media/ph-lab-harlan/ad-page_1280x1600.jpg'
     const [bgImg, setBgImg] = useState();
     const toast = useRef(null);
     const [storeid, setStoreId] = useState(storage.get("storeid"));
@@ -29,8 +28,12 @@ const WelcomeComponent = () => {
 
     useEffect(() => {
         const token = storage.get('token');
+        const currCart = storage.get('currCart')
         if (!token) {
             navigate('/auth', { replace: true });
+        }
+        if (currCart) {
+            navigate('/item-listing', { replace: true });
         }
     }, [navigate]);
 

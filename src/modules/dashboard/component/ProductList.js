@@ -1,38 +1,41 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Divider } from "primereact/divider";
 import { Toast } from "primereact/toast";
-import { RadioButton } from "primereact/radiobutton";
-import appActions from "../../../appActions";
-import storage from "../../../utils/storage";
 import ImageIcon from "../../../components/ImageIcon";
+import storage from "../../../utils/storage";
+import appActions from "../../../appActions";
 
 const URL = window?.config?.END_POINT;
 
 const ProductList = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState("coffee");
-    const [isDetail, setIsDetail] = useState(false);
-    const [selectedItem, setSelectedItem] = useState({});
-    const [cartDetail, setCartDetail] = useState({});
-    const [currCart, setCurrCart] = useState({});
-    const [order, setOrder] = useState();
-    const [productGroups, setProductGroups] = useState();
-    const [menuItems, setMenuItems] = useState([]);
+
+    const [activeTab, setActiveTab] = useState(0); // Track active tab
+    const contentRef = useRef(null);
     const storeid = storage.get("storeid");
     const terminalid = storage.get("terminalid");
+
+    const [productGroups, setProductGroups] = useState();
+    const [menuItems, setMenuItems] = useState([]);
+    const [selectedItem, setSelectedItem] = useState({});
+    const [productItems, setProductItems] = useState([]);
+    const [isDetail, setIsDetail] = useState(false);
+    const [order, setOrder] = useState();
+    const [cartDetail, setCartDetail] = useState({});
+    const [currCart, setCurrCart] = useState({});
     const currency = storage.get('currency')
 
     const productList = useSelector((state) => state.product.productList);
 
     useEffect(() => {
-        if (!storeid && !terminalid) {
-            navigate("/");
+        if (contentRef.current) {
+            contentRef.current.scrollTop = 0;
         }
-    }, [storeid, terminalid]);
+    }, [activeTab]);
 
     // Fetch current cart from local storage on component mount
     useEffect(() => {
@@ -43,9 +46,8 @@ const ProductList = () => {
         }
     }, []);
 
-    // Fetch all products when the component mounts
     useEffect(() => {
-        const catCode = storage.get("categoryCode")
+        const catCode = storage.get("categoryCode");
         if (storeid && catCode) {
             const defaultParams = {
                 language: "en",
@@ -59,19 +61,14 @@ const ProductList = () => {
         }
     }, [dispatch, storeid]);
 
-    // Fetch cart details when current cart changes
-    useEffect(() => {
-        if (currCart?.cartid) {
-            const { cartid, orderid } = currCart;
-            let sessionid = storage.get("sessionid") || currCart.sessionid;
-            getCartBySession(cartid, orderid, sessionid);
-        }
-    }, [currCart]);
-
     useEffect(() => {
         const uniqueProductGroups = [
             ...new Set(productList.map((product) => product.categorycodes)),
         ];
+
+        uniqueProductGroups.map((group) => {
+            getMenuName(group);
+        });
         setProductGroups(uniqueProductGroups);
         const result = uniqueProductGroups.map((product) => {
             return {
@@ -81,9 +78,104 @@ const ProductList = () => {
                 ),
             };
         });
-        setMenuItems(result);
-        setActiveTab(uniqueProductGroups[0]);
+        setProductItems(result);
     }, [productList]);
+    const [categoryGroup, setCategoryGroup] = useState([]);
+
+    useEffect(() => {
+        const mergedArr = productItems
+            .map((item) => {
+                const match = categoryGroup.find(
+                    (b) => b.categorycodes === item.category,
+                );
+                return {
+                    ...item,
+                    title: match?.title || null,
+                    sortorder: match?.sortorder || 0,
+                };
+            })
+            .sort((a, b) => a.sortorder - b.sortorder);
+        setMenuItems(mergedArr);
+    }, [productItems, categoryGroup]);
+
+    const getMenuName = async (category) => {
+        const config = {
+            method: "get",
+            maxBodyLength: Infinity,
+            url: `${URL}/sales/v1/category/search/fields?categorycode=${category}`,
+            headers: {
+                Authorization: "test",
+            },
+        };
+
+        try {
+            const response = await axios.request(config); // Await the response here
+            if (response.status === 200) {
+                if (response.data.length > 0) {
+                    const { title, sortorder } = response.data[0];
+                    // Update state with the latest categoryGroup
+                    setCategoryGroup((prevCategoryGroup) => [
+                        ...prevCategoryGroup,
+                        {
+                            title,
+                            categorycodes: category,
+                            sortorder,
+                        },
+                    ]);
+                }
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const checkCartValue = () => !!(order?.orderid || currCart?.cartid);
+
+    const handleClose = () => setIsDetail(false);
+
+    const handleViewCart = () => {
+        if (cartDetail.itemcount > 0) {
+            navigate("/confirm-order", { replace: true });
+        }
+    };
+
+    // Handle scroll event to detect the bottom
+    const handleScroll = useCallback(() => {
+        const content = contentRef.current;
+        if (content.scrollTop + content.clientHeight >= content.scrollHeight) {
+            // Switch to the next category when scrolled to bottom
+            setActiveTab((prevTab) => (prevTab + 1) % menuItems.length);
+        }
+    }, [menuItems.length]);
+
+    const getImage = (item) => {
+        return item.images
+            ? `${URL}/${item.images.productimageone}`
+            : `${process.env.PUBLIC_URL}/assets/images/ic_nonproduct.png`;
+    };
+
+    const handleSelectedItem = (item) => {
+        setIsDetail(true);
+        setSelectedItem(item);
+    };
+
+    // Fetch cart details when current cart changes
+    useEffect(() => {
+        if (currCart?.cartid) {
+            const { cartid, orderid } = currCart;
+            let sessionid = storage.get("sessionid") || currCart.sessionid;
+            getCartBySession(cartid, orderid, sessionid);
+        }
+    }, [currCart]);
+
+    const handleAddItem = (order, cartid) => {
+        const { sessionid, orderid } = order;
+        storage.set("sessionid", sessionid);
+        setSelectedItem({});
+        setOrder(order);
+        getCartBySession(cartid, orderid, sessionid);
+        setIsDetail(false);
+    };
 
     const getCartBySession = (cartid, orderid, sessionid) => {
         const config = {
@@ -101,86 +193,116 @@ const ProductList = () => {
             .catch((error) => console.error(error));
     };
 
-    const getImage = (item) =>
-        item.images
-            ? `${URL}/${item.images.productimageone}`
-            : `${process.env.PUBLIC_URL}/assets/images/ic_nonproduct.png`;
+    useEffect(() => {
+        // Initialize the observer
+        observer.current = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        const index = Number(
+                            entry.target.getAttribute("data-index"),
+                        );
+                        setActiveTab(index);
+                    }
+                });
+            },
+            {
+                root: null,
+                rootMargin: "0px",
+                threshold: 0.1, // Adjust to control how much of the category needs to be visible
+            },
+        );
 
-    const handleSelectedItem = (item) => {
-        setIsDetail(true);
-        setSelectedItem(item);
+        // Observe each category content section
+        contentRefs.current.forEach((ref) => {
+            if (ref) observer.current.observe(ref);
+        });
+
+        return () => {
+            // Clean up the observer on component unmount
+            observer.current.disconnect();
+        };
+    }, [menuItems]);
+
+    // Scroll to the selected tab's section when the tab is clicked
+    const handleTabClick = (index) => {
+        setActiveTab(index);
+        contentRefs.current[index]?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+        });
     };
 
-    const handleAddItem = (order, cartid) => {
-        const { sessionid, orderid } = order;
-        storage.set("sessionid", sessionid);
-        setSelectedItem({});
-        setOrder(order);
-        getCartBySession(cartid, orderid, sessionid);
-        setIsDetail(false);
-    };
-
-    const handleViewCart = () => {
-        if (cartDetail.itemcount > 0) {
-            navigate("/confirm-order", { replace: true });
-        }
-    };
-
-    const checkCartValue = () => !!(order?.orderid || currCart?.cartid);
-
-    const handleClose = () => setIsDetail(false);
+    const contentRefs = useRef([]);
+    const observer = useRef(null);
 
     const productListing = () => {
         return (
             <>
-                <div className="menu-tabs">
-                    <ul>
-                        {menuItems.map((menu, index) => (
-                            <MenuHeaderItem
+                <div className="top-bar px-3">
+                    <div className="tabs">
+                        {menuItems.map((category, index) => (
+                            <button
                                 key={index}
-                                menu={menu}
-                                setActiveTab={setActiveTab}
-                                activeTab={activeTab}
-                            />
+                                className={
+                                    activeTab === index
+                                        ? "active-tab menu-tab"
+                                        : "menu-tab"
+                                }
+                                onClick={() => handleTabClick(index)}
+                            >
+                                {category.title}
+                            </button>
                         ))}
-                    </ul>
+                    </div>
                 </div>
-                {menuItems
-                    .find((menu) => menu.category === activeTab)
-                    ?.items.map((item, index) => (
-                        <div
-                            className="menu-item p-2 cursor-pointer"
-                            key={index}
-                            onClick={() => handleSelectedItem(item)}
-                        >
-                            <img
-                                src={getImage(item)}
-                                alt={item.name}
-                                className="menu-item-image"
-                            />
-                            <div className="menu-item-details">
-                                <h3>{item.additionalfields.title}</h3>
-                                <p className="mb-0">
-                                    {item?.articlefields?.description}
-                                </p>
-                                {/* <span className="menu-item-price">
-                                    {item.baseprice.toFixed(2)}
-                                </span> */}
+
+                {/* Content Area */}
+                <div className="chat-area">
+                    <div
+                        className="category-content"
+                        style={{ height: "100%", overflowY: "auto" }}
+                    >
+                        {menuItems.map((category, index) => (
+                            <div
+                                key={category.category}
+                                className="category-section"
+                                ref={(el) => (contentRefs.current[index] = el)}
+                                data-index={index}
+                            >
+                                {category.items.map((item, itemIndex) => (
+                                    <div
+                                        className="menu-item p-2 cursor-pointer"
+                                        key={itemIndex}
+                                        onClick={() => handleSelectedItem(item)}
+                                    >
+                                        <img
+                                            src={getImage(item)}
+                                            alt={item.title}
+                                            className="menu-item-image"
+                                        />
+                                        <div className="menu-item-details">
+                                            <h3>{item.title}</h3>
+                                            <p className="mb-0">
+                                                {item?.articlefields
+                                                    ?.description ||
+                                                    "No description"}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
+                </div>
                 {(checkCartValue() || cartDetail?.cartid) && (
                     <div
-                        className="fixed col-md-12 col-lg-6 cart-summary sticky-cart-summary add-to-order flex align-items-center justify-content-between p-4"
+                        className="fixed cart-summary sticky-cart-summary add-to-order flex align-items-center justify-content-between p-4 col-12 md:col-6"
                         onClick={handleViewCart}
                     >
-                        <span>
-                            {cartDetail.itemcount} item
-                        </span>
+                        <span>{cartDetail.itemcount} item</span>
                         <span>view cart</span>
-                        <span>
-                            ₱ {cartDetail.totalamount}.00
-                        </span>
+                        <span>{currency} {cartDetail.totalamount}.00</span>
                     </div>
                 )}
             </>
@@ -188,67 +310,21 @@ const ProductList = () => {
     };
 
     return (
-        <div className="flex w-full" style={{ minHeight: "100vh" }}>
-            <div className="menu-area">
-                <div className="menu-items" style={{ paddingBottom: "120px" }}>
-                    {isDetail ? (
-                        <ProductDetail
-                            selectedItem={selectedItem}
-                            handleAddItem={handleAddItem}
-                            currCart={currCart}
-                            handleClose={handleClose}
-                            setCurrCart={setCurrCart}
-                        />
-                    ) : (
-                        productListing()
-                    )}
-                </div>
-            </div>
+        <div className="main-content flex d-md-block col-6 p-0">
+            {isDetail ? (
+                <ProductDetail
+                    selectedItem={selectedItem}
+                    handleAddItem={handleAddItem}
+                    currCart={currCart}
+                    handleClose={handleClose}
+                    setCurrCart={setCurrCart}
+                />
+            ) : (
+                productListing()
+            )}
         </div>
     );
 };
-
-const MenuHeaderItem = (props) => {
-    const { menu, setActiveTab, activeTab } = props;
-    const { category } = menu;
-    const [menuName, setMenuName] = useState('');
-    useEffect(() => {
-        const getMenuName = async () => {
-            let config = {
-                method: "get",
-                maxBodyLength: Infinity,
-                url: `${URL}/sales/v1/category/search/fields?categorycode=${category}`,
-                headers: {
-                    Authorization: "test",
-                },
-            };
-
-            try {
-                const response = await axios.request(config);
-                if (response.status === 200) {
-                    if (response.data.length > 0) {
-                        const { title } = response.data[0];
-                        setMenuName(title); // Update the state with the description
-                    }
-                }
-            } catch (error) {
-                console.error(error);
-            }
-        };
-
-        getMenuName(); // Call the async function
-    }, [category]); // Depend on the category to re-fetch if it changes
-
-    return (
-        <li
-            className={activeTab === menu.category ? "active" : ""}
-            onClick={() => setActiveTab(menu.category)}
-        >
-            {menuName} {/* Display the fetched menu name */}
-        </li>
-    );
-};
-
 
 const ProductDetail = ({
     selectedItem,
@@ -261,25 +337,39 @@ const ProductDetail = ({
     const [quantity, setQuantity] = useState(1);
     const [productAddons, setProductAddon] = useState([]);
     const [selectedOptions, setSelectedOptions] = useState([]);
+    const [totalPrice, setTotalPrice] = useState(0);
 
     const handleCloseDetail = () => handleClose();
     const toast = useRef(null);
 
     const storeid = storage.get("storeid");
     const terminalid = storage.get("terminalid");
+    const currency = storage.get('currency')
 
     useEffect(() => {
         getProductAddOn();
     }, [selectedItem]);
 
     useEffect(() => {
+        const sumOfPrices = selectedOptions.reduce(
+            (sum, item) => sum + (item.price || 0),
+            0,
+        );
+        setTotalPrice(selectedItem.baseprice * quantity + sumOfPrices);
+    }, [selectedItem, quantity, selectedOptions]);
+
+    useEffect(() => {
         if (productAddons && productAddons.length > 0) {
-            const output = productAddons.map((pao) => {
+            const output = productAddons.map((pao, i) => {
                 const { defaultSelected } = pao;
                 if (defaultSelected && defaultSelected.id) {
-                    const { groupid, productpricecode } = defaultSelected;
+                    const { groupid, productpricecode, articlefields } =
+                        defaultSelected;
                     return {
                         [groupid]: productpricecode,
+                        index: i + 1,
+                        groupid,
+                        title: articlefields.title,
                     };
                 }
             });
@@ -366,9 +456,9 @@ const ProductDetail = ({
             storeid: storeid,
             language: "en",
             qno: "Y",
-            signonid: storage.get("signonid"),
             terminalid: terminalid,
             saleschannel: "dxpkiosk",
+            signonid: storage.get("signonid"),
         });
 
         axios
@@ -407,18 +497,21 @@ const ProductDetail = ({
         };
     };
 
-    function groupAddon(data) {
+    const groupAddon = (data) => {
         if (data.addongroups && data.addons) {
-            const addongroups = data.addongroups.reduce((addongroups, producta) => {
-                const brand1 = producta.groupid;
-                if (!addongroups[brand1]) {
-                    addongroups[brand1] = [];
-                }
-    
-                addongroups[brand1].push(producta);
-                return addongroups;
-            }, {});
-    
+            const addongroups = data.addongroups.reduce(
+                (addongroups, producta) => {
+                    const brand1 = producta.groupid;
+                    if (!addongroups[brand1]) {
+                        addongroups[brand1] = [];
+                    }
+
+                    addongroups[brand1].push(producta);
+                    return addongroups;
+                },
+                {},
+            );
+
             const addons = data.addons.reduce((addons, product) => {
                 const addon = product.groupid;
                 if (addongroups[addon]) {
@@ -430,7 +523,7 @@ const ProductDetail = ({
                 }
                 return addons;
             }, {});
-    
+
             const addongroupArrays = Object.keys(addons).map((addon) => {
                 return {
                     addon,
@@ -442,43 +535,62 @@ const ProductDetail = ({
                     })[0],
                 };
             });
-            return addongroupArrays.sort(GetSortOrder("sortOrder"));   
+            return addongroupArrays.sort(GetSortOrder("sortOrder"));
         }
-    }
+    };
 
-    const handleRadioOptionChange = (groupId, value) => {
+    const handleRadioOptionChange = (group, option, i) => {
+        const { addon } = group;
+        const { price, productpricecode } = option;
         setSelectedOptions((prevSelectedOptions) => {
             // Check if the key (groupId) already exists
             const existingIndex = prevSelectedOptions.findIndex(
-                (option) => Object.keys(option)[0] === groupId,
+                (option) => Object.keys(option)[0] === addon,
             );
 
             // If the key exists, replace its value
             if (existingIndex !== -1) {
                 const updatedOptions = [...prevSelectedOptions];
-                updatedOptions[existingIndex] = { [groupId]: value };
+                updatedOptions[existingIndex] = {
+                    [addon]: productpricecode,
+                    price,
+                    index: i + 1,
+                    groupId: addon,
+                };
                 return updatedOptions;
             }
 
             // If the key doesn't exist, add the new key-value pair
-            return [...prevSelectedOptions, { [groupId]: value }];
+            return [
+                ...prevSelectedOptions,
+                {
+                    [addon]: productpricecode,
+                    price,
+                    index: i + 1,
+                    groupId: addon,
+                },
+            ];
         });
     };
 
-    const handleOptionChange = (addon, checked, productpricecode) => {
-        const flattened = selectedOptions.flatMap(obj => Object.values(obj));
+    const handleOptionChange = (addon, checked, option, productpricecode) => {
+        const flattened = selectedOptions.flatMap((obj) => Object.values(obj));
         const isIncluded = flattened.includes(productpricecode);
+        const { price } = option;
         setSelectedOptions((prevSelectedOptions) => {
             if (!isIncluded) {
                 // If checked, store the productpricecode directly as a string
-                return [...prevSelectedOptions, { [addon]: productpricecode }];
+                return [
+                    ...prevSelectedOptions,
+                    { [addon]: productpricecode, price },
+                ];
             } else {
                 // If unchecked, remove the productpricecode by setting it to null or undefined
-                const updatedOptions = [...prevSelectedOptions ];
-                const filteredData = updatedOptions.filter(item => {
+                const updatedOptions = [...prevSelectedOptions];
+                const filteredData = updatedOptions.filter((item) => {
                     return !Object.values(item).includes(productpricecode);
                 });
-                
+
                 // delete updatedOptions[addon]; // Remove the key for unchecked options
                 return filteredData;
             }
@@ -487,14 +599,44 @@ const ProductDetail = ({
 
     const getChecked = (option) => {
         return selectedOptions.some((item) =>
-            Object.values(item).includes(
-                option.productpricecode,
-            ),
-        )
-    }
+            Object.values(item).includes(option.productpricecode),
+        );
+    };
+
+    const getParentGroup = ({ itemmap }) => {
+        //return true;
+        if (!itemmap) return true;
+
+        const result = Object.entries(itemmap).reduce(
+            (acc, [groupId, indexString]) => {
+                const targetIndexes = indexString.split(", ").map(Number);
+
+                // Filter selectedOptions based on groupId and targetIndexes
+                const matches = selectedOptions.filter(
+                    (item) =>
+                        item.groupId === groupId &&
+                        targetIndexes.includes(item.index),
+                );
+
+                // If matches are found, accumulate their indexes in acc
+                if (matches.length > 0) {
+                    acc[groupId] = matches.map((item) => item.index).join(", ");
+                }
+
+                return acc;
+            },
+            {},
+        );
+
+        return !isEmptyObject(result);
+    };
+
+    const isEmptyObject = (obj) => {
+        return Object.keys(obj).length === 0;
+    };
 
     return (
-        <div className="flex flex-column h-full">
+        <div className="chat-area" style={{ paddingBottom: "300px" }}>
             <Toast ref={toast} />
             <MenuItem
                 label={selectedItem.additionalfields.title}
@@ -507,87 +649,111 @@ const ProductDetail = ({
             </div>
 
             <div>
-                {productAddons && productAddons.map((group) => (
-                    <div key={group.addon} className="field px-4">
-                        <h4>{group.addgroup.title}</h4>
-                        {group.addons.map((option) => (
-                            <div
-                                key={option.id}
-                                className="field-radiobutton flex"
-                            >
-                                {group.addgroup.title !== "customisation" && (
-                                    <RadioButton
-                                        inputId={`${group.addon}_${option.id}`}
-                                        name={group.addon}
-                                        value={option.productpricecode}
-                                        onChange={(e) =>
-                                            handleRadioOptionChange(
-                                                group.addon,
-                                                e.value,
-                                            )
-                                        }
-                                        checked={
-                                            selectedOptions.some((item) =>
-                                                Object.values(item).includes(
-                                                    option.productpricecode,
-                                                ),
-                                            )
-                                        }
-                                    />
-                                )}
-                                {group.addgroup.title === "customisation" && (
-                                    // <Checkbox
-                                    //     inputId={`${group.addon}_${option.id}`}
-                                    //     name={group.addon}
-                                    //     value={option.productpricecode}
-                                    //     onChange={(e) =>
-                                    //         handleOptionChange(
-                                    //             group.addon,
-                                    //             e.checked,
-                                    //             option.productpricecode,
-                                    //         )
-                                    //     }
-                                    //     checked={selectedOptions.some((item) =>
-                                    //         Object.values(item).includes(
-                                    //             option.productpricecode,
-                                    //         ),
-                                    //     )}
-                                    // />
-                                    <label className="custom-checkbox">
-                                        <input
-                                            type="checkbox"
-                                            value={option.productpricecode}
-                                            checked={selectedOptions.some((item) =>
-                                                Object.values(item).includes(
-                                                    option.productpricecode,
-                                                ),
-                                            )}
-                                            onChange={(e) =>
-                                                handleOptionChange(
-                                                    group.addon,
-                                                    e.checked,
-                                                    option.productpricecode,
-                                                )
-                                            }
-                                            className="hidden-checkbox"
-                                        />
-                                        <span className={`checkmark ${getChecked(option) ? 'checked' : ''}`}></span>
-                                    </label>
-                                )}
-
-                                <label htmlFor={`${group.addon}_${option.id}`}>
-                                    {option?.articlefields?.title}
-                                </label>
-                                <div className="ml-auto">
-                                    {option?.price > 0
-                                        ? `+ ${option.price.toFixed(2)}`
-                                        : ""}
-                                </div>
-                            </div>
-                        ))}
-                        <Divider />
-                    </div>
-                ))}
+                {productAddons &&
+                    productAddons.map((group, i) => (
+                        <div key={group.addon}className="field px-4">
+                            <h4>{group.addgroup.title}</h4>
+                            {group.addons.map((option, index) => (
+                                <>
+                                    {group.addgroup.multiselect !== "Y" && (
+                                        <div
+                                            key={option.id}
+                                            className="field-radiobutton flex"
+                                        >
+                                            <label className="custom-radio">
+                                                <input
+                                                    type="radio"
+                                                    name={group.addon}
+                                                    value={
+                                                        option.productpricecode
+                                                    }
+                                                    checked={selectedOptions.some(
+                                                        (item) =>
+                                                            Object.values(
+                                                                item,
+                                                            ).includes(
+                                                                option.productpricecode,
+                                                            ),
+                                                    )}
+                                                    onChange={() =>
+                                                        handleRadioOptionChange(
+                                                            group,
+                                                            option,
+                                                            index,
+                                                        )
+                                                    }
+                                                    className="hidden-radio"
+                                                />
+                                                <span
+                                                    className={`radiomark ${getChecked(option) ? "checked" : ""}`}
+                                                ></span>
+                                            </label>
+                                            <label
+                                                htmlFor={`${group.addon}_${option.id}`}
+                                            >
+                                                {option?.articlefields?.title}
+                                            </label>
+                                            <div className="ml-auto">
+                                                {option?.price > 0
+                                                    ? `+ ${option.price.toFixed(2)}`
+                                                    : ""}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {group.addgroup.multiselect == "Y" &&
+                                        getParentGroup(option) && (
+                                            <div
+                                                key={option.id}
+                                                className="field-radiobutton flex"
+                                            >
+                                                <label className="custom-checkbox">
+                                                    <input
+                                                        type="checkbox"
+                                                        value={
+                                                            option.productpricecode
+                                                        }
+                                                        checked={selectedOptions.some(
+                                                            (item) =>
+                                                                Object.values(
+                                                                    item,
+                                                                ).includes(
+                                                                    option.productpricecode,
+                                                                ),
+                                                        )}
+                                                        onChange={(e) =>
+                                                            handleOptionChange(
+                                                                group.addon,
+                                                                e.checked,
+                                                                option,
+                                                                option.productpricecode,
+                                                            )
+                                                        }
+                                                        className="hidden-checkbox"
+                                                    />
+                                                    <span
+                                                        className={`checkmark ${getChecked(option) ? "checked" : ""}`}
+                                                    ></span>
+                                                </label>
+                                                <label
+                                                    htmlFor={`${group.addon}_${option.id}`}
+                                                >
+                                                    {
+                                                        option?.articlefields
+                                                            ?.title
+                                                    }
+                                                </label>
+                                                <div className="ml-auto">
+                                                    {option?.price > 0
+                                                        ? `+ ${option.price.toFixed(2)}`
+                                                        : ""}
+                                                </div>
+                                            </div>
+                                        )}
+                                </>
+                            ))}
+                            <Divider />
+                        </div>
+                    ))}
             </div>
             <div className="flex flex-column mt-auto">
                 <div className="quantity-selector">
@@ -602,12 +768,12 @@ const ProductDetail = ({
                     <button onClick={() => setQuantity(quantity + 1)}>+</button>
                 </div>
                 <div
-                    className="add-item w-full fixed col-md-12 col-lg-6 cart-summary sticky-cart-summary add-to-order flex align-items-center justify-content-between p-4"
+                    className="add-item fixed col-12 md:col-6 cart-summary sticky-cart-summary add-to-order flex align-items-center justify-content-between p-4"
                     onClick={handleAdd}
                 >
                     <div className="w-full">
-                        add to order ₱{" "}
-                        {(selectedItem.baseprice * quantity).toFixed(2)}
+                        add to order {currency}{" "}
+                        {totalPrice.toFixed(2)}
                     </div>
                 </div>
             </div>

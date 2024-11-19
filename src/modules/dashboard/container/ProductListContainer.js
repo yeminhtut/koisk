@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
-import SampleComponent from "../component/Sample";
+import React from "react";
+import ProductList from "../component/ProductList";
 import withInactivityDetector from "../../../withInactivityDetector";
 
 const ProductListContainer = () => {
     return (
-        <SampleComponent />
+        <ProductList />
     )
 };
 

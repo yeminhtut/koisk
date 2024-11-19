@@ -14,9 +14,6 @@ import withInactivityDetector from "../../../withInactivityDetector";
 
 const { END_POINT: URL, AuthorizationHeader } = window?.config || {};
 
-const storeid = storage.get("storeid");
-const terminalid = storage.get("terminalid");
-
 const ConfirmOrder = () => {
     const navigate = useNavigate();
     const toast = useRef(null);
@@ -42,6 +39,16 @@ const ConfirmOrder = () => {
 
     const [visible, setVisible] = useState(false);
 
+    const [storeid, setStoreId] = useState()
+    const [terminalid, setTerminalId] = useState()
+
+    useEffect(() => {
+        const storeId = storage.get("storeid");
+        const terminalId = storage.get("terminalid");
+        setStoreId(storeId)
+        setTerminalId(terminalId)
+    }, [])
+
     const closeDialog = () => {
         setVisible(false);
     };
@@ -49,18 +56,9 @@ const ConfirmOrder = () => {
     useEffect(() => {
         if (storeid && terminalid) {
             getTerminalTenders();
+            //getDeviceStatus();
         }
-        //getDeviceStatus();
     }, [storeid, terminalid]);
-
-    // useEffect(() => {
-    //     const { items } = cartDetail;
-    //     if (items && items.length < 1) {
-    //         storage.remove('currCart')
-    //         navigate("/", { replace: true });
-    //         //confirmClearCart
-    //     }
-    // }, [cartDetail]);
 
     const getWebSocket = (timer) => {
         let data = JSON.stringify({
@@ -112,6 +110,7 @@ const ConfirmOrder = () => {
 
     const getDeviceStatus = () => {
         const { eft } = devices;
+        //console.log('eft are', eft)
         let config = {
             method: "get",
             maxBodyLength: Infinity,
@@ -621,7 +620,7 @@ const ConfirmOrder = () => {
                                     fontSize: "18px",
                                 }}
                                 onClick={checkMember}
-                                label={`Pay ${currency} ${getBottomTotalAmount()}`}
+                                label={`pay ${currency} ${getBottomTotalAmount()}`}
                                 disabled={isSubmitted || !selectedMethod.title}
                             />
                         </div>
