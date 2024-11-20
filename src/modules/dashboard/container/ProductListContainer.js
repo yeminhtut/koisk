@@ -8,5 +8,5 @@ const ProductListContainer = () => {
     )
 };
 
-export default ProductListContainer;
-//export default withInactivityDetector(ProductListContainer);
+//export default ProductListContainer;
+export default withInactivityDetector(ProductListContainer);

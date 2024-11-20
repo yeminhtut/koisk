@@ -1,9 +1,12 @@
 @font-face {
-  font-family: 'BrownTT-Light';
+  font-family: 'BrownTT-Light' !important;
   src: url('../../fonts/BROWNTT-LIGHT.TTF') format('truetype');
   font-weight: normal;
   font-style: normal;
 }
+// :root {
+//   font-family: 'BrownTT-Light';
+// }
 html {
   font-family: 'BrownTT-Light';
 }
@@ -107,17 +110,19 @@ html {
   font-weight: 500;
   line-height: normal;
   margin-top: 0;
+  margin-bottom: 0px;
 }
 
 .menu-item-details p {
-    overflow: hidden;
-    color: var(--rgb-120131142, #78838E);
-    text-overflow: ellipsis;
-    font-family: BrownTT;
-    font-size: 16px;
-    font-style: normal;
-    font-weight: 400;
-    line-height: normal;
+  overflow: hidden;
+  color: var(--rgb-120131142, #78838E);
+  text-overflow: ellipsis;
+  font-family: BrownTT;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
+  margin-top: 8px;
 }
 
 .menu-item-price {
@@ -206,7 +211,6 @@ html {
     justify-content: center;
     align-items: center;
     color: white; /* White text color */
-    font-family: 'Arial', sans-serif; /* Adjust as needed */
   }
   
   .text-content {
@@ -214,7 +218,7 @@ html {
   }
   
   .main-heading {
-    font-size: 24px;
+    font-size: 26px;
     color: #D6B04A; /* Yellow color for the main heading */
   }
   
@@ -363,11 +367,6 @@ font-weight: 300;
   overflow-y: auto;
 }
 
-.menu-item {
-  display: flex;
-  margin-bottom: 15px;
-}
-
 .menu-item-details {
   flex: 1;
 }
@@ -391,12 +390,10 @@ font-weight: 300;
 }
 
 .menu-item {
-  display: flex;
-  align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 10px;
   border-bottom: 1px solid #e0e0e0;
+  align-items: center;
 }
 
 .menu-item-left {
@@ -432,11 +429,6 @@ font-weight: 300;
 .menu-tabs li {
   padding: 10px;
   cursor: pointer;
-}
-
-.menu-item {
-  display: flex;
-  margin-bottom: 15px;
 }
 
 .menu-item-details {
@@ -480,12 +472,11 @@ font-weight: 300;
 
 .menu-item {
   display: flex;
-  margin-bottom: 15px;
 }
 
 .menu-item-image {
-  width: 80px;
-  height: 80px;
+  width: 70px;
+  height: 70px;
   object-fit: cover;
   margin-right: 15px;
   border-radius: 8px;
@@ -582,8 +573,8 @@ font-weight: 300;
     position: absolute;
     top: 3px;
     left: 7px;
-    width: 7px;
-    height: 12px;
+    width: 5px;
+    height: 10px;
     border: solid #B39137;
     border-width: 0 2px 2px 0;
     transform: rotate(45deg);

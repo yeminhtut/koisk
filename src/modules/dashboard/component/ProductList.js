@@ -783,7 +783,7 @@ const ProductDetail = ({
 
 const MenuItem = ({ label, imgSrc, handleCloseDetail }) => {
     return (
-        <div className="menu-item">
+        <div className="menu-item" style={{ padding: '10px'}}>
             <div className="menu-item-left">
                 <div onClick={handleCloseDetail}>
                     <ImageIcon

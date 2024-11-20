@@ -204,7 +204,7 @@ const ConfirmOrder = () => {
         if (selectedMethod.title.toLowerCase() === "cash") {
             return handleCashPayment();
         } else {
-            const timeOut = timeOutTime > 0 ? timeOutTime * 1000 : timeOutTime;
+            const timeOut = timeOutTime > 0 ? timeOutTime * 1000 : 30000;
             //if (isDeviceActive) {
                 setIsLoadingEft(true);
                 paymentSignOn();
@@ -620,7 +620,7 @@ const ConfirmOrder = () => {
                                     fontSize: "18px",
                                 }}
                                 onClick={checkMember}
-                                label={`pay ${currency} ${getBottomTotalAmount()}`}
+                                label={`place order ${currency} ${getBottomTotalAmount()}`}
                                 disabled={isSubmitted || !selectedMethod.title}
                             />
                         </div>

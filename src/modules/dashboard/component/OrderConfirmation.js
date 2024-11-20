@@ -39,12 +39,12 @@ const OrderConfirmation = (props) => {
                     </h1>
                 </div>
                 <div className="order-number">
-                    <h2>Order: #{trxno}</h2>
+                    <h2>Order #{trxno}</h2>
                 </div>
-                <div className="text-center text-white text-xl">
-                    <p>your number will be called at the pick up area</p>
-                    Redirecting in
-                    <span id="countdown mx-2"> {countdown}</span> seconds 
+                <div className="text-center text-white" style={{ fontSize: '24px'}}>
+                    <p>your number will be called<br/> at the pick up area</p>
+                    {/* Redirecting in
+                    <span id="countdown mx-2"> {countdown}</span> seconds  */}
                 </div>
             </div>
         </div>
