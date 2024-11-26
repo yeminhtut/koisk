@@ -58,7 +58,7 @@ const WelcomeComponent = () => {
 
     const fetchData = async () => {
         try {
-            await getSignOnId();
+            //await getSignOnId();
             await getPrinterConfig();
             //await getTerminalBirInfo();
             await getInteractiveConfig();

@@ -12,7 +12,7 @@ import ImageIcon from "../../../components/ImageIcon";
 import OrderConfirmation from "./OrderConfirmation";
 import withInactivityDetector from "../../../withInactivityDetector";
 
-const { END_POINT: URL, AuthorizationHeader } = window?.config || {};
+const { END_POINT: URL, AuthorizationHeader: token } = window?.config || {};
 
 const ConfirmOrder = () => {
     const navigate = useNavigate();
@@ -93,7 +93,7 @@ const ConfirmOrder = () => {
             method: "get",
             url: `${URL}/system/v1/store/device/search/fields?devicegroup=Eft&status=Active&storeid=${storeid}`,
             headers: {
-                Authorization: AuthorizationHeader,
+                Authorization: token,
             },
         };
 
@@ -116,7 +116,7 @@ const ConfirmOrder = () => {
             maxBodyLength: Infinity,
             url: `${URL}/broker/v1/device/clients`,
             headers: {
-                Authorization: AuthorizationHeader,
+                Authorization: token,
             },
         };
         //check device status
@@ -153,10 +153,9 @@ const ConfirmOrder = () => {
         try {
             const { data } = await axios.get(
                 `${URL}/pos/v1/cart/${cartid}/${orderid}?sessionid=${newSession ? newSession : sessionid}&status=sales`,
-                //`${URL}/pos/v1/cart/${cartid}/${orderid}?status=sales`,
                 {
                     headers: {
-                        Authorization: "test",
+                        Authorization: token,
                         "Content-Type": "application/json",
                     },
                     maxBodyLength: Infinity,
@@ -174,7 +173,7 @@ const ConfirmOrder = () => {
         let data = JSON.stringify({
             orderid: orderid,
             payamount: totalamount,
-            paytype: "eft",
+            paytype: selectedMethod.tagtype,
         });
 
         let config = {
@@ -182,7 +181,7 @@ const ConfirmOrder = () => {
             maxBodyLength: Infinity,
             url: `${URL}/pos/v1/cart/${cartid}/payment?sessionid=${sessionid}`,
             headers: {
-                Authorization: "test",
+                Authorization: token,
                 "Content-Type": "application/json",
             },
             data: data,
@@ -274,7 +273,7 @@ const ConfirmOrder = () => {
                 setIsLoadingEft(false);
                 clearTimeout(timer);
             } else {
-                successEftRes();
+                successEftRes(response.message);
                 setIsLoadingEft(false);
                 clearTimeout(timer);
                 setIsSubmitted(false);
@@ -297,22 +296,24 @@ const ConfirmOrder = () => {
         };
     };
 
-    const successEftRes = async () => {
+    const successEftRes = async (res) => {
         try {
             const { cartid, orderid, totalamount } = cartDetail;
+            const data = JSON.parse(res.response.data)
             const paymentData = {
-                description: "card",
+                description: selectedMethod.tagtype,
                 orderid,
                 payamount: totalamount,
-                paytype: "Card",
-                paytyperef: "Card",
+                paytype: selectedMethod.tagtype,
+                paytyperef: data?.invoiceNo,
+                additionalfields: data
             };
             const result = await axios.post(
                 `${URL}/pos/v1/cart/${cartid}/payment?${sessionid}`,
                 JSON.stringify(paymentData),
                 {
                     headers: {
-                        Authorization: AuthorizationHeader,
+                        Authorization: token,
                         "Content-Type": "application/json",
                     },
                     maxBodyLength: Infinity,
@@ -321,8 +322,6 @@ const ConfirmOrder = () => {
             const { idx } = result.data;
             if (idx) {
                 handleCardPaid(idx);
-                // closeCart();
-                // storage.remove("currCart");
             }
         } catch (error) {
             console.error("Error processing payment:", error);
@@ -340,7 +339,7 @@ const ConfirmOrder = () => {
             JSON.stringify(data),
             {
                 headers: {
-                    Authorization: AuthorizationHeader,
+                    Authorization: token,
                     "Content-Type": "application/json",
                 },
                 maxBodyLength: Infinity,
@@ -368,7 +367,7 @@ const ConfirmOrder = () => {
                 JSON.stringify(paymentData),
                 {
                     headers: {
-                        Authorization: AuthorizationHeader,
+                        Authorization: token,
                         "Content-Type": "application/json",
                     },
                     maxBodyLength: Infinity,
@@ -390,7 +389,6 @@ const ConfirmOrder = () => {
             const { cartid, orderid } = cartDetail;
             const closeData = {
                 orderid,
-                //signonid,
                 terminalid,
             };
 
@@ -399,7 +397,7 @@ const ConfirmOrder = () => {
                 JSON.stringify(closeData),
                 {
                     headers: {
-                        Authorization: "test",
+                        Authorization: token,
                         "Content-Type": "application/json",
                     },
                     maxBodyLength: Infinity,
@@ -435,13 +433,14 @@ const ConfirmOrder = () => {
 
     const handleBack = () => navigate("/item-listing", { replace: true });
 
-    const formattedOrders = (orders) => {
+    const formattedOrders = (orders, quantity) => {
         const result = orders.map(order => ({
             orderid: order.orderid,
+            idx: order.idx,
             productpricecode: order.storeproductid 
                 ? `${order.storeproductid}-${order.productcode}`
                 : order.productcode,  // Use only `productcode` if `storeproductid` is missing
-            quantity: order.quantity
+            quantity: quantity
         }));
         return result
     }
@@ -453,7 +452,7 @@ const ConfirmOrder = () => {
             orderid,
             idx,
             quantity,
-            addons: formattedOrders(addons)
+            addons: formattedOrders(addons, quantity)
         };
         try {
             const repsonse = await axios.post(
@@ -461,7 +460,7 @@ const ConfirmOrder = () => {
                 JSON.stringify(data),
                 {
                     headers: {
-                        Authorization: "test",
+                        Authorization: token,
                         "Content-Type": "application/json",
                     },
                     maxBodyLength: Infinity,
@@ -486,7 +485,6 @@ const ConfirmOrder = () => {
     }
 
     const increaseOrderItem = (item) => {
-        //console.log('item is', item)
         updateCartItem(item, item.quantity + 1);
     }
 
@@ -507,7 +505,7 @@ const ConfirmOrder = () => {
                 maxBodyLength: Infinity,
                 url: `${URL}/system/v1/store/tag/search/fields?storeid=${storeid}&terminalid=${terminalid}&tagtype=tender&taggroup=tprops&status=Active`,
                 headers: {
-                    Authorization: "test",
+                    Authorization: token,
                     "Content-Type": "application/json",
                 },
             };
@@ -538,9 +536,6 @@ const ConfirmOrder = () => {
     const getBottomTotalAmount = () => {
         return cartDetail.totalamount
     };
-
-    const handleTotal = (amount) => {
-    }
 
     const CartView = () => (
         <>
@@ -583,7 +578,6 @@ const ConfirmOrder = () => {
                                     decreaseOrderItem={decreaseOrderItem}
                                     items={cartDetail.items}
                                     confirmClearCart={confirmClearCart}
-                                    handleTotal={handleTotal}
                                 />
                             ))}
                         </div>
@@ -697,6 +691,8 @@ const ConfirmOrder = () => {
             {isSuccess && (
                 <OrderConfirmation
                     orderNumber={orderNumber}
+                    cartId={cartDetail.cartid}
+                    orderId={cartDetail.orderid}
                     handleBack={handleBack}
                 />
             )}
@@ -757,8 +753,7 @@ const OrderItem = ({
     item,
     removeOrderItem,
     increaseOrderItem,
-    decreaseOrderItem,
-    handleTotal
+    decreaseOrderItem
 }) => {
     const { addons } = item;
     const [quantity, setQuantity] = useState(item.quantity);
@@ -787,9 +782,10 @@ const OrderItem = ({
     };
 
     const getTotalAmount = () => {
+        //return item.totalamount
         const { quantity, unitprice: itemTotalAmount } = item;
         const addonsTotalSum = addons.reduce((sum, addon) => sum + addon.totalamount, 0);
-        return (itemTotalAmount + addonsTotalSum) * quantity;
+        return (itemTotalAmount * quantity) + addonsTotalSum;
     };
     
 

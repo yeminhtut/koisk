@@ -1,4 +1,3 @@
-// withInactivityDetector.js
 import React, { useEffect, useRef, useState } from 'react';
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
@@ -6,113 +5,150 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import storage from './utils/storage';
 
-const { END_POINT: URL } = window?.config || {};
+const { END_POINT: URL, AuthorizationHeader: token } = window?.config || {};
 
 const withInactivityDetector = (WrappedComponent) => {
     return (props) => {
+        const navigate = useNavigate();
+
+        // Refs for inactivity and redirection timers
         const timeoutRef = useRef(null);
         const redirectTimeoutRef = useRef(null);
+
+        // States for dialog visibility, countdown, and translations
         const [showDialog, setShowDialog] = useState(false);
-        const navigate = useNavigate();
-        const inactivityTime = storage.get('inactiveTimeout') ? storage.get('inactiveTimeout') * 1000 : 60000
-        const redirectTime = storage.get('redirectTimeout') ? storage.get('redirectTimeout') * 1000 : 10000
-        
-        const [cartDetail, setCartDetail] = useState({});
-        const resetInactivityTimer = () => {
-            // Clear any existing timers
-            if (timeoutRef.current) clearTimeout(timeoutRef.current);
-            if (redirectTimeoutRef.current) clearTimeout(redirectTimeoutRef.current);
+        const [countdown, setCountdown] = useState(0);
+        const [translations, setTranslations] = useState({});
 
-            // Set a new timer for inactivity
-            timeoutRef.current = setTimeout(() => {
-                // Show the inactivity dialog after timeout
-                setShowDialog(true);
+        // Inactivity and redirection times
+        const inactivityTime = storage.get('inactiveTimeout') ? storage.get('inactiveTimeout') * 1000 : 60000;
+        const redirectTime = storage.get('redirectTimeout') ? storage.get('redirectTimeout') * 1000 : 10000;
 
-                // Set a redirect timer for after the dialog appears
-                redirectTimeoutRef.current = setTimeout(() => {
-                    // Redirect to home if still inactive
-                    
-                    const currCart = JSON.parse(storage.get('currCart'))
-                    if (currCart && currCart.cartid) {
-                        clearCart()
-                    }
-                    else {
-                        navigate('/');
-                    }
-                    
-                }, redirectTime);
-            }, inactivityTime);
-        };
-
-        const clearCart = async () => {
-            const cart = JSON.parse(storage.get('currCart'))
-            const { cartid, orderid } = cart
+        // Fetch translations
+        const fetchTranslations = async () => {
             try {
-                await axios.put(
-                    `${URL}/pos/v1/cart/${cartid}/cancel`,
-                    JSON.stringify({ orderid }),
-                    {
-                        headers: {
-                            Authorization: "test",
-                            "Content-Type": "application/json",
-                        },
-                        maxBodyLength: Infinity,
-                    },
+                const response = await axios.get(
+                    `${URL}/cms/v1/word/translation/search?language=en&search_field=wrdcode&search_condi=eq&search_value=SCO_MESSAGES`,
+                    { headers: { Authorization: token } }
                 );
-                storage.remove("currCart");
-                navigate("/", { replace: true });
+
+                if (response.status === 200) {
+                    const { translation } = response.data[0];
+                    setTranslations(translation || {});
+                }
             } catch (error) {
-                console.error("Error voiding cart:", error);
+                console.error('Error fetching translations:', error);
             }
         };
 
-        const handleContinue = () => {
-            // Close the dialog and reset the timer
-            setShowDialog(false);
+        // Clear and reset timers for inactivity
+        const resetInactivityTimer = () => {
+            clearTimeout(timeoutRef.current);
+            clearTimeout(redirectTimeoutRef.current);
+
+            timeoutRef.current = setTimeout(() => {
+                setShowDialog(true);
+                setCountdown(redirectTime / 1000);
+
+                redirectTimeoutRef.current = setTimeout(handleRedirect, redirectTime);
+            }, inactivityTime);
+        };
+
+        // Handle redirection or cart clearing
+        const handleRedirect = async () => {
+            const currCart = JSON.parse(storage.get('currCart'));
+
+            if (currCart?.cartid) {
+                try {
+                    await axios.put(
+                        `${URL}/pos/v1/cart/${currCart.cartid}/cancel`,
+                        JSON.stringify({ orderid: currCart.orderid }),
+                        {
+                            headers: {
+                                Authorization: token,
+                                'Content-Type': 'application/json',
+                            },
+                        }
+                    );
+                    storage.remove('currCart');
+                } catch (error) {
+                    console.error('Error voiding cart:', error);
+                }
+            }
+            navigate('/', { replace: true });
+        };
+
+        // Countdown logic
+        useEffect(() => {
+            if (showDialog && countdown > 0) {
+                const interval = setInterval(() => {
+                    setCountdown((prev) => {
+                        if (prev === 1) {
+                            clearInterval(interval);
+                            handleRedirect();
+                        }
+                        return prev - 1;
+                    });
+                }, 1000);
+
+                return () => clearInterval(interval);
+            }
+        }, [showDialog, countdown]);
+
+        // Handle user activity
+        const handleActivity = () => {
+            if (showDialog) setShowDialog(false);
             resetInactivityTimer();
         };
 
+        // Add and clean up event listeners for user activity
         useEffect(() => {
-            // Reset the timer on any activity
-            const handleActivity = () => {
-                if (showDialog) {
-                    setShowDialog(false); // Close dialog if user is active
-                }
-                resetInactivityTimer();
-            };
-
-            // Attach event listeners
             window.addEventListener('mousemove', handleActivity);
             window.addEventListener('keydown', handleActivity);
             window.addEventListener('touchstart', handleActivity);
 
-            // Start the timer initially
             resetInactivityTimer();
 
-            // Cleanup on component unmount
             return () => {
-                if (timeoutRef.current) clearTimeout(timeoutRef.current);
-                if (redirectTimeoutRef.current) clearTimeout(redirectTimeoutRef.current);
+                clearTimeout(timeoutRef.current);
+                clearTimeout(redirectTimeoutRef.current);
                 window.removeEventListener('mousemove', handleActivity);
                 window.removeEventListener('keydown', handleActivity);
                 window.removeEventListener('touchstart', handleActivity);
             };
         }, [showDialog]);
 
+        // Fetch translations on mount
+        useEffect(() => {
+            fetchTranslations();
+        }, []);
+
         return (
             <>
                 <WrappedComponent {...props} />
-                <Dialog
+                {/* <Dialog
                     visible={showDialog}
-                    header="Session Timeout"
+                    header={translations?.inactive_header || 'Session Timeout'}
                     onHide={() => setShowDialog(false)}
-                    footer={
-                        <Button label="Continue" onClick={handleContinue} />
-                    }
-                    style={{ width: '30vw' }}
+                    footer={<Button label="Continue" onClick={handleActivity} />}
+                    style={{ width: '300px' }}
                     modal
                 >
-                    <p>Your session is about to end due to inactivity. Do you want to continue?</p>
+                    <p>{translations?.inactive_content || 'Your session is about to expire due to inactivity.'}</p>
+                    <p>Redirecting in <strong>{countdown}</strong> seconds...</p>
+                </Dialog> */}
+                 <Dialog 
+                    header="Session Timeout!"
+                    visible={showDialog}
+                    onHide={() => setShowDialog(false)}
+                    className="custom-timeout-dialog"
+                >
+                    <p>{translations?.inactive_content || 'Your session is about to expire due to inactivity.'}</p>
+                    <div className="p-dialog-footer">
+                        <Button label="No" className="p-button-secondary" onClick={handleActivity} size="large" />
+                        <Button label="Yes" className="p-button-primary" onClick={handleActivity}  size="large" />
+                    </div>
+                    <p className="countdown-timer">Redirecting in <strong>{countdown}</strong> seconds...</p>
                 </Dialog>
             </>
         );

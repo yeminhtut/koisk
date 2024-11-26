@@ -55,6 +55,7 @@ const ProductList = () => {
                 sort: "sortorder",
                 status: "Active",
                 storeid: storeid,
+                stopsell: 'N',
                 categorycodes: storage.get("categoryCode"),
             };
             dispatch(appActions.PRODUCT_GET_ALL_REQUEST(defaultParams));
@@ -69,7 +70,7 @@ const ProductList = () => {
         uniqueProductGroups.map((group) => {
             getMenuName(group);
         });
-        setProductGroups(uniqueProductGroups);
+        //setProductGroups(uniqueProductGroups);
         const result = uniqueProductGroups.map((product) => {
             return {
                 category: product,
@@ -138,15 +139,6 @@ const ProductList = () => {
             navigate("/confirm-order", { replace: true });
         }
     };
-
-    // Handle scroll event to detect the bottom
-    const handleScroll = useCallback(() => {
-        const content = contentRef.current;
-        if (content.scrollTop + content.clientHeight >= content.scrollHeight) {
-            // Switch to the next category when scrolled to bottom
-            setActiveTab((prevTab) => (prevTab + 1) % menuItems.length);
-        }
-    }, [menuItems.length]);
 
     const getImage = (item) => {
         return item.images
@@ -222,7 +214,7 @@ const ProductList = () => {
             // Clean up the observer on component unmount
             observer.current.disconnect();
         };
-    }, [menuItems]);
+    }, [menuItems, isDetail]);
 
     // Scroll to the selected tab's section when the tab is clicked
     const handleTabClick = (index) => {
@@ -458,7 +450,7 @@ const ProductDetail = ({
             qno: "Y",
             terminalid: terminalid,
             saleschannel: "dxpkiosk",
-            signonid: storage.get("signonid"),
+            //signonid: storage.get("signonid"),
         });
 
         axios
@@ -604,7 +596,6 @@ const ProductDetail = ({
     };
 
     const getParentGroup = ({ itemmap }) => {
-        //return true;
         if (!itemmap) return true;
 
         const result = Object.entries(itemmap).reduce(
@@ -651,13 +642,12 @@ const ProductDetail = ({
             <div>
                 {productAddons &&
                     productAddons.map((group, i) => (
-                        <div key={group.addon}className="field px-4">
+                        <div key={i}className="field px-4">
                             <h4>{group.addgroup.title}</h4>
                             {group.addons.map((option, index) => (
-                                <>
+                                <div key={index}>
                                     {group.addgroup.multiselect !== "Y" && (
                                         <div
-                                            key={option.id}
                                             className="field-radiobutton flex"
                                         >
                                             <label className="custom-radio">
@@ -749,7 +739,7 @@ const ProductDetail = ({
                                                 </div>
                                             </div>
                                         )}
-                                </>
+                                </div>
                             ))}
                             <Divider />
                         </div>

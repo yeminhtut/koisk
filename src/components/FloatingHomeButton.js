@@ -5,11 +5,15 @@ import React, { useState } from 'react';
 import { Button } from 'primereact/button';
 import { ConfirmDialog } from 'primereact/confirmdialog';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import storage from '../utils/storage';
+
+const { END_POINT: URL, AuthorizationHeader: token } = window?.config || {};
 
 const FloatingHomeButton = () => {
     const [dialogVisible, setDialogVisible] = useState(false);
-    const [position, setPosition] = useState({ x: window.innerWidth - 60, y: window.innerHeight - 80 });
+    //const [position, setPosition] = useState({ x: window.innerWidth - 60, y: window.innerHeight - 80 });
+    const [position, setPosition] = useState({ x: 0, y: 0 });
     const [dragging, setDragging] = useState(false);
     const [start, setStart] = useState({ x: 0, y: 0 });
 
@@ -44,8 +48,33 @@ const FloatingHomeButton = () => {
 
     const handleConfirm = () => {
         setDialogVisible(false);
-        storage.remove('currCart')
+        const cart = storage.get('currCart')
+        if (cart) {
+            clearCart(cart)
+        }
+        storage.remove("currCart");
         handleHomeClick();
+    };
+
+    const clearCart = async (cartData) => {
+        const cart = JSON.parse(cartData)
+        try {
+            const { cartid, orderid } = cart;
+            await axios.put(
+                `${URL}/pos/v1/cart/${cartid}/cancel`,
+                JSON.stringify({ orderid }),
+                {
+                    headers: {
+                        Authorization: token,
+                        "Content-Type": "application/json",
+                    },
+                    maxBodyLength: Infinity,
+                },
+            );
+            storage.remove("currCart");
+        } catch (error) {
+            console.error("Error voiding cart:", error);
+        }
     };
 
     const handleHomeClick = () => {
@@ -98,5 +127,3 @@ const FloatingHomeButton = () => {
 };
 
 export default FloatingHomeButton;
-
-//export default FloatingHomeButton;
