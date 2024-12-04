@@ -4,9 +4,11 @@
 import React, { useState } from 'react';
 import { Button } from 'primereact/button';
 import { ConfirmDialog } from 'primereact/confirmdialog';
+import { Dialog } from 'primereact/dialog';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import storage from '../utils/storage';
+import ImageIcon from './ImageIcon';
 
 const { END_POINT: URL, AuthorizationHeader: token } = window?.config || {};
 
@@ -83,7 +85,7 @@ const FloatingHomeButton = () => {
 
     return (
         <>
-            <ConfirmDialog
+            {/* <ConfirmDialog
                 visible={dialogVisible}
                 onHide={() => setDialogVisible(false)}
                 message="Do you want to go back to home screen?"
@@ -91,8 +93,34 @@ const FloatingHomeButton = () => {
                 icon="pi pi-exclamation-triangle"
                 accept={handleConfirm}
                 reject={() => setDialogVisible(false)}
-            />
-            <div
+                className="custom-timeout-dialog"
+            /> */}
+            <Dialog 
+                    header="confirmation"
+                    visible={dialogVisible}
+                    onHide={() => setDialogVisible(false)}
+                    className="custom-timeout-dialog"
+                >
+                    <p>do you want to go back to home screen?</p>
+                    <div className="p-dialog-footer">
+                        <Button label="no" className="p-button-secondary" onClick={() => setDialogVisible(false)} size="large" />
+                        <Button label="yes" className="p-button-primary" onClick={handleConfirm}  size="large" />
+                    </div>
+                </Dialog>
+            <div 
+                style={{
+                    position: 'fixed',
+                    left: '20px',
+                    top: '20px'
+                }}
+                onClick={handleClick}>
+                <ImageIcon
+                    iconName={"back_arrow.png"}
+                    style={{ width: "30px", height: "30px" }}
+                />
+            </div>
+            
+            {/* <div
             style={{
                 position: 'fixed',
                 left: `${position.x}px`,
@@ -108,7 +136,7 @@ const FloatingHomeButton = () => {
             onTouchEnd={handleDragEnd}
         >
             <Button
-                icon="pi pi-home"
+                icon="pi pi-arrow-left "
                 style={{
                     borderRadius: '50%',
                     width: '50px',
@@ -120,7 +148,8 @@ const FloatingHomeButton = () => {
                 onClick={handleClick}
                 aria-label="Home"
             />
-        </div>
+            
+        </div> */}
         </>
         
     );

@@ -7,6 +7,7 @@ import WelcomeComponent from "./modules/welcome/component/Welcome";
 import Layout from "./Layout";
 import ProductListContainer from "./modules/dashboard/container/ProductListContainer";
 import LoginContainer from "./modules/auth/container/LoginContainer";
+import ProductDetail from "./modules/dashboard/component/ProductDetail";
 
 const AuthRequiredContainer = () => {
     return <LayoutContainer />;
@@ -21,6 +22,10 @@ const LayoutContainer = () => {
                     <Route
                         path="/item-listing"
                         element={<ProductListContainer />}
+                    />
+                    <Route
+                        path="/item-detail"
+                        element={<ProductDetail />}
                     />
                     <Route
                         path="/payment-success"

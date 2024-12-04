@@ -126,29 +126,18 @@ const withInactivityDetector = (WrappedComponent) => {
         return (
             <>
                 <WrappedComponent {...props} />
-                {/* <Dialog
-                    visible={showDialog}
-                    header={translations?.inactive_header || 'Session Timeout'}
-                    onHide={() => setShowDialog(false)}
-                    footer={<Button label="Continue" onClick={handleActivity} />}
-                    style={{ width: '300px' }}
-                    modal
-                >
-                    <p>{translations?.inactive_content || 'Your session is about to expire due to inactivity.'}</p>
-                    <p>Redirecting in <strong>{countdown}</strong> seconds...</p>
-                </Dialog> */}
                  <Dialog 
-                    header="Session Timeout!"
+                    header={translations?.inactive_header || 'session timeout'}
                     visible={showDialog}
                     onHide={() => setShowDialog(false)}
                     className="custom-timeout-dialog"
                 >
-                    <p>{translations?.inactive_content || 'Your session is about to expire due to inactivity.'}</p>
+                    <p>{translations?.inactive_content || 'your session is about to expire due to inactivity.'}</p>
                     <div className="p-dialog-footer">
-                        <Button label="No" className="p-button-secondary" onClick={handleActivity} size="large" />
-                        <Button label="Yes" className="p-button-primary" onClick={handleActivity}  size="large" />
+                        <Button label="no" className="p-button-secondary" onClick={handleActivity} size="large" />
+                        <Button label="yes" className="p-button-primary" onClick={handleActivity}  size="large" />
                     </div>
-                    <p className="countdown-timer">Redirecting in <strong>{countdown}</strong> seconds...</p>
+                    <p className="countdown-timer">redirecting in <strong>{countdown}</strong> seconds...</p>
                 </Dialog>
             </>
         );

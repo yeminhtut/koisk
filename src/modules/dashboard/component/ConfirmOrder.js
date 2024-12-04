@@ -11,6 +11,8 @@ import storage from "../../../utils/storage";
 import ImageIcon from "../../../components/ImageIcon";
 import OrderConfirmation from "./OrderConfirmation";
 import withInactivityDetector from "../../../withInactivityDetector";
+import OrderItem from "./OrderItem";
+import ProductDetail from "./ProductDetail";
 
 const { END_POINT: URL, AuthorizationHeader: token } = window?.config || {};
 
@@ -37,10 +39,12 @@ const ConfirmOrder = () => {
     const timeOutTime = storage.get("payTimeOut");
     const currency = storage.get('currency')
 
-    const [visible, setVisible] = useState(false);
-
+    const [visible, setVisible] = useState(false)
     const [storeid, setStoreId] = useState()
     const [terminalid, setTerminalId] = useState()
+    const [dialogVisible, setDialogVisible] = useState(false)
+
+    const [selectedItem, setSelectedItem] = useState()
 
     useEffect(() => {
         const storeId = storage.get("storeid");
@@ -69,7 +73,7 @@ const ConfirmOrder = () => {
             method: "post",
             url: `${URL}/broker/v1/device/client`,
             headers: {
-                Authorization: "7550935cd2bc97f0307afb2aa204e245",
+                Authorization: token,
                 "Content-Type": "application/json",
             },
             data: data,
@@ -439,7 +443,7 @@ const ConfirmOrder = () => {
             idx: order.idx,
             productpricecode: order.storeproductid 
                 ? `${order.storeproductid}-${order.productcode}`
-                : order.productcode,  // Use only `productcode` if `storeproductid` is missing
+                : order.productcode, 
             quantity: quantity
         }));
         return result
@@ -477,7 +481,7 @@ const ConfirmOrder = () => {
     const removeOrderItem = (item) => {
         const { items } = cartDetail;
         if (items && items.length == 1) {
-            confirmClearCart()
+            setDialogVisible(true)
         }
         else {
             updateCartItem(item, 0);
@@ -534,8 +538,17 @@ const ConfirmOrder = () => {
     };
 
     const getBottomTotalAmount = () => {
-        return cartDetail.totalamount
+        return (cartDetail?.totalamount ?? 0).toFixed(2);
     };
+
+    const handleEditItem = (item) => {
+        navigate("/item-detail", {
+            state:{
+                record: item,
+                isEdit: true
+            },
+          });
+    }
 
     const CartView = () => (
         <>
@@ -550,7 +563,7 @@ const ConfirmOrder = () => {
             <div className="flex w-full" style={{ height: "100vh" }}>
                 <div className="p-4 w-full">
                     <div className="flex align-items-center justify-content-between mb-4">
-                        <div className="flex">
+                        <div className="flex" style={{ color: '#51545D'}}>
                             <div onClick={handleBack}>
                                 <ImageIcon
                                     iconName={"back_arrow.png"}
@@ -561,7 +574,7 @@ const ConfirmOrder = () => {
                         <h2>Confirm Order</h2>
                         <div
                             className="clsbtn cursor-pointer"
-                            onClick={confirmClearCart}
+                            onClick={() => setDialogVisible(true)}
                         >
                             Clear
                         </div>
@@ -578,6 +591,7 @@ const ConfirmOrder = () => {
                                     decreaseOrderItem={decreaseOrderItem}
                                     items={cartDetail.items}
                                     confirmClearCart={confirmClearCart}
+                                    handleEditItem={handleEditItem}
                                 />
                             ))}
                         </div>
@@ -607,11 +621,11 @@ const ConfirmOrder = () => {
 
                             <Button
                                 type="button"
-                                className="w-full p-4"
+                                className="w-full p-4 custom-btn"
                                 style={{
                                     backgroundColor: "#51545D",
                                     color: "#FFF",
-                                    fontSize: "18px",
+                                    fontSize: "16pt",
                                 }}
                                 onClick={checkMember}
                                 label={`place order ${currency} ${getBottomTotalAmount()}`}
@@ -620,6 +634,18 @@ const ConfirmOrder = () => {
                         </div>
                     )}
                 </div>
+                <Dialog 
+                    header="confirmation"
+                    visible={dialogVisible}
+                    onHide={() => setDialogVisible(false)}
+                    className="custom-timeout-dialog"
+                >
+                    <p>do you want to clear your order?</p>
+                    <div className="p-dialog-footer">
+                        <Button label="no" className="p-button-secondary" onClick={() => setDialogVisible(false)} size="large" />
+                        <Button label="yes" className="p-button-primary" onClick={clearCart}  size="large" />
+                    </div>
+                </Dialog>
             </div>
         </>
     );
@@ -630,20 +656,17 @@ const ConfirmOrder = () => {
     };
 
     const checkMember = () => {
-        //setVisible(true);
         handlePayment()
     };
 
-    const accept = () => {
-        clearCart();
-    };
+    const accept = () => clearCart();
 
     const reject = () => {};
 
     const confirmClearCart = () => {
         confirmDialog({
-            message: "Do you want to clear your order?",
-            header: "Clear Order Confirmation",
+            message: "do you want to clear your order?",
+            header: "clear order confirmation",
             icon: "pi pi-info-circle",
             defaultFocus: "reject",
             acceptClassName: "p-button-danger",
@@ -747,80 +770,6 @@ const ConfirmOrder = () => {
             </Dialog>
         </>
     );
-};
-
-const OrderItem = ({
-    item,
-    removeOrderItem,
-    increaseOrderItem,
-    decreaseOrderItem
-}) => {
-    const { addons } = item;
-    const [quantity, setQuantity] = useState(item.quantity);
-
-    const increaseItemQty = () => {
-        setQuantity(quantity + 1);
-        increaseOrderItem(item);
-    };
-
-    const decreaseItemQty = () => {
-        const currQty = quantity - 1;
-        if (currQty == 0) {
-            removeOrderItem(item);
-        } else {
-            setQuantity(currQty);
-            decreaseOrderItem(item);
-        }
-    };
-
-    const getItemAddon = () => {
-        const resultArr = addons.map((ao) => ao.description);
-        if (resultArr.length > 0) {
-            return resultArr.join(", ");
-        }
-        return "";
-    };
-
-    const getTotalAmount = () => {
-        //return item.totalamount
-        const { quantity, unitprice: itemTotalAmount } = item;
-        const addonsTotalSum = addons.reduce((sum, addon) => sum + addon.totalamount, 0);
-        return (itemTotalAmount * quantity) + addonsTotalSum;
-    };
-    
-
-    const cartArea = () => {
-        return (
-            <>
-                <div className="flex mb-4 align-items-center">
-                    <div className="col">
-                        <h4 className="m-0 text-xl">{item.description}</h4>
-                        <p className="m-0">{getItemAddon()}</p>
-                    </div>
-                    <div className="col">
-                        <div className="order-selector flex justify-content-center align-items-center my-2">
-                            <button onClick={() => decreaseItemQty(item)}>
-                                -
-                            </button>
-                            <span className="mx-4">{quantity}x</span>
-                            <button onClick={increaseItemQty}>+</button>
-                        </div>
-                    </div>
-                    <div className="col text-right">{getTotalAmount().toFixed(2)}</div>
-                    {/* <div className="col text-right pr-0 flex justify-content-end">
-                    <Button
-                        label="Remove"
-                        onClick={() => handleRemoveItem(item)}
-                        severity="danger"
-                        text
-                    />
-                </div> */}
-                </div>
-            </>
-        );
-    };
-
-    return <>{cartArea()}</>;
 };
 
 export default ConfirmOrder;
