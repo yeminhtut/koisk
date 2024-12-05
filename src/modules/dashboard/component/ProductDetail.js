@@ -66,7 +66,6 @@ const ProductDetail = () => {
                 (sum, item) => sum + (item.price || 0),
                 0,
             );
-            console.log('debugging', selectedOptions)
             setTotalPrice((item.baseprice + sumOfPrices) * quantity);
         }
     }, [item, quantity, selectedOptions]);

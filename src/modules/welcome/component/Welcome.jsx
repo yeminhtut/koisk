@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useLocation } from "react-router-dom";
@@ -17,23 +17,21 @@ const WelcomeComponent = () => {
     const query = useQuery();
     const storeId = query.get("storeid");
     const terminalId = query.get("terminalid");
-   // const { storeId, terminalId } = useParams();
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const [bgImg, setBgImg] = useState();
     const toast = useRef(null);
     const [storeid, setStoreId] = useState(storage.get("storeid"));
     const [terminalid, setTerminalId] = useState(storage.get("terminalid"));
-    const [isLocked, setIsLocked] = useState(false);
 
     useEffect(() => {
-        const token = storage.get('token');
-        const currCart = storage.get('currCart')
+        const token = storage.get("token");
+        const currCart = storage.get("currCart");
         if (!token) {
-            navigate('/auth', { replace: true });
+            navigate("/auth", { replace: true });
         }
         if (currCart) {
-            navigate('/item-listing', { replace: true });
+            navigate("/item-listing", { replace: true });
         }
     }, [navigate]);
 
@@ -53,12 +51,12 @@ const WelcomeComponent = () => {
             dispatch(appActions.STORE_GET_REQUEST(storeid));
             fetchData();
             storage.set("session", AuthorizationHeader);
+            getUpsell()
         }
     }, [storeid, terminalid]);
 
     const fetchData = async () => {
         try {
-            //await getSignOnId();
             await getPrinterConfig();
             //await getTerminalBirInfo();
             await getInteractiveConfig();
@@ -83,11 +81,12 @@ const WelcomeComponent = () => {
             .then((response) => {
                 if (response.status === 200 && response.data.length > 0) {
                     const { additionalfields } = response.data[0];
-                    const { sco, quicklookupcatcode, paymenttimeout } = additionalfields;
-                    storage.set("payTimeOut", paymenttimeout)
+                    const { sco, quicklookupcatcode, paymenttimeout } =
+                        additionalfields;
+                    storage.set("payTimeOut", paymenttimeout);
                     if (sco) {
                         const { start_page } = JSON.parse(sco);
-                        setBgImg(start_page ? start_page : '');
+                        setBgImg(start_page ? start_page : "");
                         storage.set("categoryCode", quicklookupcatcode);
                     }
                 }
@@ -97,30 +96,25 @@ const WelcomeComponent = () => {
             });
     };
 
-    const getSignOnId = async () => {
+    const getUpsell = async () => {
         const config = {
             method: "get",
-            url: `${URL}/pos/v1/terminal/signon/search/fields?terminalid=${terminalid}&storeid=${storeid}&status=Active`,
+            url: `${URL}/cms/v1/article/search/fields?articletype=Page Content&language=en&section=upsell&articlegroup=hnh-sco`,
             headers: { Authorization: AuthorizationHeader },
         };
 
         try {
             const response = await axios.request(config);
             if (response.status === 200) {
-                const { signonid } = response.data;
-                storage.set("signonid", signonid);
-            }
-            if (response.status == 206) {
-                const { message } = response.data;
-                toast.current.show({
-                    severity: "error",
-                    summary: "Info",
-                    detail: message,
-                });
-                setIsLocked(true);
+                const result = response.data.filter(item => 
+                    item.fields?.properties?.storeid.split(',').includes(storeid)
+                );
+                if (result.length > 0) {
+                    storage.set('storeUpsell', JSON.stringify(result[0]))
+                }
             }
         } catch (error) {
-            console.error("Error fetching SignOn ID", error);
+            console.error("No upsell", error);
         }
     };
 
@@ -156,18 +150,17 @@ const WelcomeComponent = () => {
         try {
             const response = await axios.request(config);
             if (response.data.length > 0) {
-                const { additionalfields } = response.data[0]
-                const { INACTIVITY_TIME, REDIRECT_TIME } = additionalfields
-                storage.set('inactiveTimeout', INACTIVITY_TIME) 
-                storage.set('redirectTimeout', REDIRECT_TIME) 
+                const { additionalfields } = response.data[0];
+                const { INACTIVITY_TIME, REDIRECT_TIME } = additionalfields;
+                storage.set("inactiveTimeout", INACTIVITY_TIME);
+                storage.set("redirectTimeout", REDIRECT_TIME);
             }
-            
         } catch (error) {
             console.error("Error fetching Store BIR Info", error);
         }
     };
 
-    const getRegisteredDevices = async (deviceids) => {
+    const getRegisteredDevices = async () => {
         const config = {
             method: "get",
             url: `${URL}/system/v1/store/device/search/fields?devicegroup=Printer,Virtualprinter,Eft&status=Active&storeid=${storeid}`,
@@ -202,7 +195,7 @@ const WelcomeComponent = () => {
     const handleClick = () => {
         const storeid = storage.get("storeid");
         const terminalid = storage.get("terminalid");
-        if (storeid && terminalid && !isLocked) {
+        if (storeid && terminalid) {
             navigate("/item-listing", { replace: true });
         } else {
             toast.current.show({
@@ -216,25 +209,27 @@ const WelcomeComponent = () => {
     return (
         <>
             <Toast ref={toast} />
-            <div
-                className="background cursor-pointer"
-                onClick={handleClick}
-                //style={{ backgroundImage: `url(${bgImg})` }}
-            >
-                <div style={{ width: '100%', height: '100vh', overflow: 'hidden' }}>
+            <div className="background cursor-pointer" onClick={handleClick}>
+                <div
+                    style={{
+                        width: "100%",
+                        height: "100vh",
+                        overflow: "hidden",
+                    }}
+                >
                     {bgImg && (
-                        <img 
+                        <img
                             src={bgImg}
-                            alt="" 
-                            style={{ width: '100vw', height: '100vh', objectFit: 'contain' }} 
+                            alt=""
+                            style={{
+                                width: "100vw",
+                                height: "100vh",
+                                objectFit: "contain",
+                            }}
                         />
                     )}
-                    
                 </div>
-                
             </div>
-            
-
         </>
     );
 };

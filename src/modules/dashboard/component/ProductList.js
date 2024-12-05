@@ -230,6 +230,8 @@ const ProductList = () => {
           });
     }
 
+    console.log('debugging', menuItems)
+
     const productListing = () => {
         return (
             <>
@@ -264,6 +266,7 @@ const ProductList = () => {
                                 ref={(el) => (contentRefs.current[index] = el)}
                                 data-index={index}
                             >
+                                <h2 style={{ fontSize: '16pt', marginBottom: '12px', marginLeft: '4px', marginTop: '12px'}}>{category.title}</h2>
                                 {category.items.map((item, itemIndex) => (
                                     <div className="menu-item p-2 cursor-pointer" key={itemIndex} onClick={() => handleAddRedirect(item)}>
                                     <img
@@ -293,7 +296,7 @@ const ProductList = () => {
                         <span>{cartDetail.itemcount} item</span>
                         <span>view cart</span>
                         <span>
-                            {currency} {cartDetail.totalamount}.00
+                            {currency}{cartDetail.totalamount}.00
                         </span>
                     </div>
                 )}

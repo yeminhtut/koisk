@@ -12,7 +12,6 @@ import ImageIcon from "../../../components/ImageIcon";
 import OrderConfirmation from "./OrderConfirmation";
 import withInactivityDetector from "../../../withInactivityDetector";
 import OrderItem from "./OrderItem";
-import ProductDetail from "./ProductDetail";
 
 const { END_POINT: URL, AuthorizationHeader: token } = window?.config || {};
 
@@ -37,21 +36,19 @@ const ConfirmOrder = () => {
     const [selectedMethod, setSelectedMethod] = useState("cash");
     const [isLoadingEft, setIsLoadingEft] = useState(false);
     const timeOutTime = storage.get("payTimeOut");
-    const currency = storage.get('currency')
+    const currency = storage.get("currency");
 
-    const [visible, setVisible] = useState(false)
-    const [storeid, setStoreId] = useState()
-    const [terminalid, setTerminalId] = useState()
-    const [dialogVisible, setDialogVisible] = useState(false)
-
-    const [selectedItem, setSelectedItem] = useState()
+    const [visible, setVisible] = useState(false);
+    const [storeid, setStoreId] = useState();
+    const [terminalid, setTerminalId] = useState();
+    const [dialogVisible, setDialogVisible] = useState(false);
 
     useEffect(() => {
         const storeId = storage.get("storeid");
         const terminalId = storage.get("terminalid");
-        setStoreId(storeId)
-        setTerminalId(terminalId)
-    }, [])
+        setStoreId(storeId);
+        setTerminalId(terminalId);
+    }, []);
 
     const closeDialog = () => {
         setVisible(false);
@@ -82,30 +79,9 @@ const ConfirmOrder = () => {
             .request(config)
             .then((response) => {
                 if (response.status === 200 && response.data) {
-                    const { clientid, socketurl } = response.data;
-                    getEft();
+                    const { socketurl } = response.data;
                     handleWebSocket(socketurl, timer);
                 }
-            })
-            .catch((error) => {
-                console.log(error);
-            });
-    };
-
-    const getEft = () => {
-        let config = {
-            method: "get",
-            url: `${URL}/system/v1/store/device/search/fields?devicegroup=Eft&status=Active&storeid=${storeid}`,
-            headers: {
-                Authorization: token,
-            },
-        };
-
-        axios
-            .request(config)
-            .then((response) => {
-                const { deviceid } = response.data[0];
-                storage.set("eft", deviceid);
             })
             .catch((error) => {
                 console.log(error);
@@ -209,20 +185,20 @@ const ConfirmOrder = () => {
         } else {
             const timeOut = timeOutTime > 0 ? timeOutTime * 1000 : 30000;
             //if (isDeviceActive) {
-                setIsLoadingEft(true);
-                paymentSignOn();
-                const timer = setTimeout(() => {
-                    // Change another state after 30 seconds
-                    setIsLoadingEft(false); // Optionally stop the loading state
-                    setIsSubmitted(false);
-                    toast.current.show({
-                        severity: "error",
-                        summary: "Error",
-                        detail: `No response from EFT`,
-                        life: 10000,
-                    });
-                }, timeOut); // 30 seconds in milliseconds
-                getWebSocket(timer);
+            setIsLoadingEft(true);
+            paymentSignOn();
+            const timer = setTimeout(() => {
+                // Change another state after 30 seconds
+                setIsLoadingEft(false); // Optionally stop the loading state
+                setIsSubmitted(false);
+                toast.current.show({
+                    severity: "error",
+                    summary: "Error",
+                    detail: `No response from EFT`,
+                    life: 10000,
+                });
+            }, timeOut); // 30 seconds in milliseconds
+            getWebSocket(timer);
             // }
             // else {
             //     toast.current.show({
@@ -236,15 +212,15 @@ const ConfirmOrder = () => {
     };
 
     const handleWebSocket = (socketurl, timer) => {
+        const { deviceid } = selectedMethod
         const { totalamount } = cartDetail;
         const ws = new WebSocket(socketurl);
         const uId = "EFT_" + new Date().getTime();
         const kioskId = "kiosk_" + storeid + "_" + terminalid;
-        const { eft } = devices;
         const msgToSend = {
             header: {
                 msgid: uId,
-                to: eft,
+                to: deviceid,
                 from: kioskId,
                 rqtype: "pay",
                 rqsubtype: "sale",
@@ -252,7 +228,7 @@ const ConfirmOrder = () => {
             },
             message: {
                 amount: totalamount * 100,
-                cardtype: selectedMethod.tagtype
+                cardtype: selectedMethod.tagtype,
             },
         };
         // Connection opened
@@ -303,14 +279,14 @@ const ConfirmOrder = () => {
     const successEftRes = async (res) => {
         try {
             const { cartid, orderid, totalamount } = cartDetail;
-            const data = JSON.parse(res.response.data)
+            const data = JSON.parse(res.response.data);
             const paymentData = {
                 description: selectedMethod.tagtype,
                 orderid,
                 payamount: totalamount,
                 paytype: selectedMethod.tagtype,
                 paytyperef: data?.invoiceNo,
-                additionalfields: data
+                additionalfields: data,
             };
             const result = await axios.post(
                 `${URL}/pos/v1/cart/${cartid}/payment?${sessionid}`,
@@ -438,16 +414,16 @@ const ConfirmOrder = () => {
     const handleBack = () => navigate("/item-listing", { replace: true });
 
     const formattedOrders = (orders, quantity) => {
-        const result = orders.map(order => ({
+        const result = orders.map((order) => ({
             orderid: order.orderid,
             idx: order.idx,
-            productpricecode: order.storeproductid 
+            productpricecode: order.storeproductid
                 ? `${order.storeproductid}-${order.productcode}`
-                : order.productcode, 
-            quantity: quantity
+                : order.productcode,
+            quantity: quantity,
         }));
-        return result
-    }
+        return result;
+    };
 
     const updateCartItem = async (item, quantity) => {
         const { idx, addons } = item;
@@ -456,7 +432,7 @@ const ConfirmOrder = () => {
             orderid,
             idx,
             quantity,
-            addons: formattedOrders(addons, quantity)
+            addons: formattedOrders(addons, quantity),
         };
         try {
             const repsonse = await axios.post(
@@ -481,16 +457,15 @@ const ConfirmOrder = () => {
     const removeOrderItem = (item) => {
         const { items } = cartDetail;
         if (items && items.length == 1) {
-            setDialogVisible(true)
-        }
-        else {
+            setDialogVisible(true);
+        } else {
             updateCartItem(item, 0);
         }
-    }
+    };
 
     const increaseOrderItem = (item) => {
         updateCartItem(item, item.quantity + 1);
-    }
+    };
 
     const decreaseOrderItem = (item) => {
         if (item.quantity > 1) {
@@ -518,11 +493,12 @@ const ConfirmOrder = () => {
 
             if (response.status === 200 && Array.isArray(response.data)) {
                 const tenderTypes = response.data
-                .map((r) => ({
-                    title: r.title,
-                    tagtype: r.tagtypevalue
-                }))
-                .filter(Boolean);
+                    .map((r) => ({
+                        title: r.title,
+                        tagtype: r.tagtypevalue,
+                        deviceid: r?.additionalfields?.deviceid,
+                    }))
+                    .filter(Boolean);
                 setTenderTypes(tenderTypes);
             } else {
                 toast.current.show({
@@ -543,12 +519,12 @@ const ConfirmOrder = () => {
 
     const handleEditItem = (item) => {
         navigate("/item-detail", {
-            state:{
+            state: {
                 record: item,
-                isEdit: true
+                isEdit: true,
             },
-          });
-    }
+        });
+    };
 
     const CartView = () => (
         <>
@@ -561,9 +537,9 @@ const ConfirmOrder = () => {
                 </div>
             )}
             <div className="flex w-full" style={{ height: "100vh" }}>
-                <div className="p-4 w-full">
-                    <div className="flex align-items-center justify-content-between mb-4">
-                        <div className="flex" style={{ color: '#51545D'}}>
+                <div className="p-4 pt-2 w-full">
+                    <div className="flex align-items-center justify-content-between mb-2">
+                        <div className="flex" style={{ color: "#51545D" }}>
                             <div onClick={handleBack}>
                                 <ImageIcon
                                     iconName={"back_arrow.png"}
@@ -571,7 +547,7 @@ const ConfirmOrder = () => {
                                 />
                             </div>
                         </div>
-                        <h2>Confirm Order</h2>
+                        <h2 style={{ fontSize: '16pt'}}>Confirm Order</h2>
                         <div
                             className="clsbtn cursor-pointer"
                             onClick={() => setDialogVisible(true)}
@@ -579,9 +555,12 @@ const ConfirmOrder = () => {
                             Clear
                         </div>
                     </div>
-                    <div className="scrollable h-full" style={{ paddingBottom: "250px" }}>
+                    <div
+                        className="scrollable h-full"
+                        style={{ paddingBottom: "280px" }}
+                    >
                         <div className="mb-4">
-                            <h3>Order Items</h3>
+                            <h3 style={{ fontSize: '12pt'}}>Order Items</h3>
                             {cartDetail.items?.map((item, index) => (
                                 <OrderItem
                                     item={item}
@@ -601,40 +580,22 @@ const ConfirmOrder = () => {
                             className="p-0 align-items-center justify-content-center fixed right-0 bottom-0 col-12 md:col-6"
                             style={{ background: "#f9fafb" }}
                         >
-                            <div className="mb-4">
-                                <h3 className="pl-4">Choose Payment Method</h3>
-                                <div className="flex px-4">
-                                    {tenderTypes.map((tender, i) => (
-                                        <div
-                                            key={i}
-                                            className={`col-4 justify-content-center align-items-center mr-2 p-4 payment-option 
-                                        ${selectedMethod === tender ? "selected" : ""}`}
-                                            onClick={() =>
-                                                handleSelection(tender)
-                                            }
-                                        >
-                                            {tender.title}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <Button
-                                type="button"
-                                className="w-full p-4 custom-btn"
-                                style={{
-                                    backgroundColor: "#51545D",
-                                    color: "#FFF",
-                                    fontSize: "16pt",
-                                }}
-                                onClick={checkMember}
-                                label={`place order ${currency} ${getBottomTotalAmount()}`}
-                                disabled={isSubmitted || !selectedMethod.title}
+                            <PaymentMethodSelector
+                                tenderTypes={tenderTypes}
+                                selectedMethod={selectedMethod}
+                                handleSelection={handleSelection}
+                            />
+                            <PlaceOrderButton
+                                checkMember={checkMember}
+                                currency={currency}
+                                getBottomTotalAmount={getBottomTotalAmount}
+                                isSubmitted={isSubmitted}
+                                selectedMethod={selectedMethod}
                             />
                         </div>
                     )}
                 </div>
-                <Dialog 
+                <Dialog
                     header="confirmation"
                     visible={dialogVisible}
                     onHide={() => setDialogVisible(false)}
@@ -642,8 +603,18 @@ const ConfirmOrder = () => {
                 >
                     <p>do you want to clear your order?</p>
                     <div className="p-dialog-footer">
-                        <Button label="no" className="p-button-secondary" onClick={() => setDialogVisible(false)} size="large" />
-                        <Button label="yes" className="p-button-primary" onClick={clearCart}  size="large" />
+                        <Button
+                            label="no"
+                            className="p-button-secondary"
+                            onClick={() => setDialogVisible(false)}
+                            size="large"
+                        />
+                        <Button
+                            label="yes"
+                            className="p-button-primary"
+                            onClick={clearCart}
+                            size="large"
+                        />
                     </div>
                 </Dialog>
             </div>
@@ -656,7 +627,7 @@ const ConfirmOrder = () => {
     };
 
     const checkMember = () => {
-        handlePayment()
+        handlePayment();
     };
 
     const accept = () => clearCart();
@@ -675,36 +646,35 @@ const ConfirmOrder = () => {
         });
     };
 
-    const [ memberEmail, setMemberEmail ] = useState()
+    const [memberEmail, setMemberEmail] = useState();
 
     const handleChangeEmail = (e) => {
-        setMemberEmail(e.target.value)
-    }
+        setMemberEmail(e.target.value);
+    };
 
     const handleMember = () => {
         let config = {
-            method: 'get',
+            method: "get",
             maxBodyLength: Infinity,
             url: `${URL}/crm/v1/member/search?search_field=emailid&search_condi=eq&search_value=${memberEmail}`,
-            headers: { 
-                'Authorization': 'test'
-            }
+            headers: {
+                Authorization: "test",
+            },
         };
 
-        axios.request(config)
-        .then((response) => {
-            if (response.status == 200) {
-                console.log('go there')
-            }
-            else {
-                console.log('show error')
-            }
-        })
-        .catch((error) => {
-            console.log(error);
-        });
-
-    }
+        axios
+            .request(config)
+            .then((response) => {
+                if (response.status == 200) {
+                    console.log("go there");
+                } else {
+                    console.log("show error");
+                }
+            })
+            .catch((error) => {
+                console.log(error);
+            });
+    };
 
     return (
         <>
@@ -771,6 +741,50 @@ const ConfirmOrder = () => {
         </>
     );
 };
+
+const PaymentMethodSelector = ({
+    tenderTypes,
+    selectedMethod,
+    handleSelection,
+}) => (
+    <div className="mb-4">
+        <h3 className="pl-4" style={{ marginTop: '8px'}}>Choose Payment Method</h3>
+        <div className="flex px-4" style={{ overflowY: 'scroll'}}>
+            {tenderTypes.map((tender, i) => (
+                <div
+                    key={i}
+                    className={`col-4 justify-content-center align-items-center mr-2 p-3 payment-option 
+                        ${selectedMethod === tender ? "selected" : ""}`}
+                    onClick={() => handleSelection(tender)}
+                >
+                    {tender.title}
+                </div>
+            ))}
+        </div>
+    </div>
+);
+
+// Extracted Place Order Button Component
+const PlaceOrderButton = ({
+    checkMember,
+    currency,
+    getBottomTotalAmount,
+    isSubmitted,
+    selectedMethod,
+}) => (
+    <Button
+        type="button"
+        className="w-full p-4 custom-btn"
+        style={{
+            backgroundColor: "#51545D",
+            color: "#FFF",
+            fontSize: "16pt",
+        }}
+        onClick={checkMember}
+        label={`place order ${currency}${getBottomTotalAmount()}`}
+        disabled={isSubmitted || !selectedMethod.title}
+    />
+);
 
 export default ConfirmOrder;
 //export default withInactivityDetector(ConfirmOrder);

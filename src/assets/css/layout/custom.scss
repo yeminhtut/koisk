@@ -124,14 +124,17 @@ body {
 }
 
 .menu-item-details p {
-  overflow: hidden;
   color: #51545D;
-  text-overflow: ellipsis;
   font-size: 12pt;
   font-style: normal;
   font-weight: 400;
   line-height: normal;
   margin-top: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .menu-item-price {
@@ -260,11 +263,9 @@ body {
 
   .clsbtn {
     color: #51545D;
-
-font-family: BrownTT;
-font-size: 22px;
-font-style: normal;
-font-weight: 300;
+    font-size: 16pt;
+    font-style: normal;
+    font-weight: 300;
   }
 
   @media (max-width: 768px) {
@@ -399,7 +400,6 @@ font-weight: 300;
 .menu-item {
   justify-content: space-between;
   width: 100%;
-  border-bottom: 1px solid #e0e0e0;
   align-items: center;
 }
 
@@ -487,10 +487,6 @@ font-weight: 300;
   object-fit: cover;
   margin-right: 15px;
   border-radius: 8px;
-}
-
-.menu-item-details {
-  flex: 1;
 }
 
 .menu-item-price {
