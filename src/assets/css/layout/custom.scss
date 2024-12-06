@@ -108,16 +108,11 @@ body {
     gap: 15px;
 }
 
-.menu-item {
-    display: flex;
-    gap: 15px;
-}
-
-.menu-item-details h3 {
+.standard-header {
   color: #51545D;
   font-size: 16pt;
   font-style: normal;
-  font-weight: bold;
+  font-weight: 600;
   line-height: normal;
   margin-top: 0;
   margin-bottom: 0px;
@@ -400,7 +395,9 @@ body {
 .menu-item {
   justify-content: space-between;
   width: 100%;
-  align-items: center;
+  // align-items: center;
+  display: flex;
+  gap: 12px;
 }
 
 .menu-item-left {
@@ -475,10 +472,6 @@ body {
 .menu-tabs li.active {
   color: #fdbb00;
   border-bottom: 2px solid #fdbb00;
-}
-
-.menu-item {
-  display: flex;
 }
 
 .menu-item-image {
@@ -703,7 +696,7 @@ body {
 }
 
 .category-content {
-  padding: 20px;
+  padding: 10px 20px 20px 20px;
   background-color: #fafafa;
 }
 

@@ -13,7 +13,7 @@ import OrderConfirmation from "./OrderConfirmation";
 import withInactivityDetector from "../../../withInactivityDetector";
 import OrderItem from "./OrderItem";
 
-const { END_POINT: URL, AuthorizationHeader: token } = window?.config || {};
+const { END_POINT: URL, AuthorizationHeader: token, MemberLookUp: memFunc } = window?.config || {};
 
 const ConfirmOrder = () => {
     const navigate = useNavigate();
@@ -481,7 +481,6 @@ const ConfirmOrder = () => {
         try {
             const config = {
                 method: "get",
-                maxBodyLength: Infinity,
                 url: `${URL}/system/v1/store/tag/search/fields?storeid=${storeid}&terminalid=${terminalid}&tagtype=tender&taggroup=tprops&status=Active`,
                 headers: {
                     Authorization: token,
@@ -497,6 +496,7 @@ const ConfirmOrder = () => {
                         title: r.title,
                         tagtype: r.tagtypevalue,
                         deviceid: r?.additionalfields?.deviceid,
+                        additionalfields: r?.additionalfields
                     }))
                     .filter(Boolean);
                 setTenderTypes(tenderTypes);
@@ -586,7 +586,7 @@ const ConfirmOrder = () => {
                                 handleSelection={handleSelection}
                             />
                             <PlaceOrderButton
-                                checkMember={checkMember}
+                                checkMember={placeOrder}
                                 currency={currency}
                                 getBottomTotalAmount={getBottomTotalAmount}
                                 isSubmitted={isSubmitted}
@@ -620,14 +620,9 @@ const ConfirmOrder = () => {
             </div>
         </>
     );
-
-    const handleDialog = () => {
-        closeDialog();
-        handlePayment();
-    };
-
     const checkMember = () => {
-        handlePayment();
+        //handlePayment();
+        setVisible(true)
     };
 
     const accept = () => clearCart();
@@ -646,35 +641,19 @@ const ConfirmOrder = () => {
         });
     };
 
-    const [memberEmail, setMemberEmail] = useState();
+    const handleExistingMember = (member) => {
+        setVisible(false)
+        handlePayment();
+    }
 
-    const handleChangeEmail = (e) => {
-        setMemberEmail(e.target.value);
-    };
+    const handleSkip = () => {
+        setVisible(false)
+        handlePayment();
+    }
 
-    const handleMember = () => {
-        let config = {
-            method: "get",
-            maxBodyLength: Infinity,
-            url: `${URL}/crm/v1/member/search?search_field=emailid&search_condi=eq&search_value=${memberEmail}`,
-            headers: {
-                Authorization: "test",
-            },
-        };
-
-        axios
-            .request(config)
-            .then((response) => {
-                if (response.status == 200) {
-                    console.log("go there");
-                } else {
-                    console.log("show error");
-                }
-            })
-            .catch((error) => {
-                console.log(error);
-            });
-    };
+    const placeOrder = () => {
+        memFunc ? checkMember() : handlePayment()
+    }
 
     return (
         <>
@@ -689,55 +668,7 @@ const ConfirmOrder = () => {
                     handleBack={handleBack}
                 />
             )}
-            <Dialog
-                visible={visible}
-                onHide={closeDialog}
-                header="place order with an account"
-                style={{ width: "350px" }}
-                className="order-dialog"
-                draggable={false}
-                modal
-            >
-                <div className="order-form-container">
-                    <label htmlFor="email" className="email-label mb-2">
-                        email address
-                    </label>
-                    <InputText
-                        id="email"
-                        className="email-input w-full mt-4"
-                        placeholder="ja12_123@gmail.com"
-                        onChange={handleChangeEmail}
-                    />
-                    <Button
-                        type="button"
-                        className="w-full mt-2"
-                        style={{
-                            backgroundColor: "#51545D",
-                            color: "#FFF",
-                            fontSize: "18px",
-                        }}
-                        onClick={handleMember}
-                        label="done"
-                    />
-
-                    <Divider align="center">
-                        <span>OR</span>
-                    </Divider>
-
-                    <p className="signup-text text-center">
-                        <a href="#" className="signup-link">
-                            sign up
-                        </a>{" "}
-                        for a free voucher
-                    </p>
-
-                    <p className="skip-link text-right">
-                        <a href="#" onClick={handleDialog}>
-                            skip
-                        </a>
-                    </p>
-                </div>
-            </Dialog>
+            <OrderDialog handleSkip={handleSkip} visible={visible} closeDialog={closeDialog} handleExistingMember={handleExistingMember} />
         </>
     );
 };
@@ -746,23 +677,128 @@ const PaymentMethodSelector = ({
     tenderTypes,
     selectedMethod,
     handleSelection,
-}) => (
-    <div className="mb-4">
+}) => {
+    const getTenderInfo = (tender) => {
+        const { title, additionalfields } = tender
+        const { tenderimg } = additionalfields
+        if (tenderimg.length > 0) {
+            return <img src={URL+tenderimg} style={{ height: '50px' }} />
+        }
+        return title
+    }
+    return (
+        <div className="mb-4">
         <h3 className="pl-4" style={{ marginTop: '8px'}}>Choose Payment Method</h3>
         <div className="flex px-4" style={{ overflowY: 'scroll'}}>
             {tenderTypes.map((tender, i) => (
                 <div
                     key={i}
-                    className={`col-4 justify-content-center align-items-center mr-2 p-3 payment-option 
+                    className={`col-4 flex justify-content-center align-items-center mr-2 p-3 payment-option 
                         ${selectedMethod === tender ? "selected" : ""}`}
                     onClick={() => handleSelection(tender)}
                 >
-                    {tender.title}
+                    {getTenderInfo(tender)}
                 </div>
             ))}
         </div>
     </div>
-);
+    )
+}
+
+const OrderDialog = ({ visible, closeDialog, handleExistingMember, handleSkip }) => {
+    const [memberEmail, setMemberEmail] = useState("");
+    const [errorMessage, setErrorMessage] = useState("");
+
+    const handleChangeEmail = (e) => {
+        setMemberEmail(e.target.value);
+        setErrorMessage(""); // Clear error when user types
+    };
+
+    const handleMember = () => {
+        if (!memberEmail) {
+            setErrorMessage("Please enter an email address.");
+            return;
+        }
+
+        let config = {
+            method: "get",
+            url: `${URL}/crm/v1/member/search?search_field=emailid&search_condi=eq&search_value=${memberEmail}`,
+            headers: {
+                Authorization: "test",
+            },
+        };
+
+        axios
+            .request(config)
+            .then((response) => {
+                if (response.status === 200 && response.data?.length > 0) {
+                    handleExistingMember(response.data[0])
+                } else {
+                    setErrorMessage("Email address not found!");
+                }
+            })
+            .catch((error) => {
+                console.error(error);
+                setErrorMessage("An error occurred. Please try again.");
+            });
+    };
+
+    return (
+        <Dialog
+            visible={visible}
+            onHide={closeDialog}
+            header="Place order with an account"
+            style={{ width: "350px" }}
+            className="order-dialog"
+            draggable={false}
+            modal
+        >
+            <div className="order-form-container">
+                <label htmlFor="email" className="email-label mb-2">
+                    Email Address
+                </label>
+                <InputText
+                    id="email"
+                    className={`email-input w-full mt-4 ${
+                        errorMessage ? "p-invalid" : ""
+                    }`}
+                    placeholder="ja12_123@gmail.com"
+                    value={memberEmail}
+                    onChange={handleChangeEmail}
+                />
+                {errorMessage && (
+                    <small className="p-error">{errorMessage}</small>
+                )}
+                <Button
+                    type="button"
+                    className="w-full mt-2"
+                    style={{
+                        backgroundColor: "#51545D",
+                        color: "#FFF",
+                        fontSize: "18px",
+                    }}
+                    onClick={handleMember}
+                    label="Done"
+                />
+                <Divider align="center">
+                    <span>OR</span>
+                </Divider>
+                <p className="signup-text text-center">
+                    <a href="#" className="signup-link">
+                        Sign up
+                    </a>{" "}
+                    for a free voucher
+                </p>
+                <p className="skip-link text-right cursor-pointer">
+                    <span onClick={handleSkip}>
+                        skip
+                    </span>
+                </p>
+            </div>
+        </Dialog>
+    );
+};
+
 
 // Extracted Place Order Button Component
 const PlaceOrderButton = ({
