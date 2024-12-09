@@ -12,8 +12,14 @@ import ImageIcon from "../../../components/ImageIcon";
 import OrderConfirmation from "./OrderConfirmation";
 import withInactivityDetector from "../../../withInactivityDetector";
 import OrderItem from "./OrderItem";
+import NewMemberDialog from "./NewMemberDialog";
+import UpSellDialog from "./UpSellDialog";
 
-const { END_POINT: URL, AuthorizationHeader: token, MemberLookUp: memFunc } = window?.config || {};
+const {
+    END_POINT: URL,
+    AuthorizationHeader: token,
+    MemberLookUp: memFunc,
+} = window?.config || {};
 
 const ConfirmOrder = () => {
     const navigate = useNavigate();
@@ -42,12 +48,30 @@ const ConfirmOrder = () => {
     const [storeid, setStoreId] = useState();
     const [terminalid, setTerminalId] = useState();
     const [dialogVisible, setDialogVisible] = useState(false);
+    const [terminalInfo, setTerminalInfo] = useState({})
+
+    const [loginMember, setLoginMember] = useState({})
+
+    const [isUpSell, setIsUpSell] = useState(false)
+    const [upsellProduct, setUpSellProduct] = useState()
+    const [upSellVisible, setUpSellVisible] = useState(false)
 
     useEffect(() => {
         const storeId = storage.get("storeid");
         const terminalId = storage.get("terminalid");
+        const terminalData = JSON.parse(storage.get('terminalInfo'))
+        const storeUpsell = JSON.parse(storage.get('storeUpsell'))
+        if (storeUpsell?.id) {
+            setIsUpSell(true)
+            setUpSellProduct({
+                productCode: storeUpsell?.fields?.properties?.productcode,
+                image: storeUpsell?.imagegallery?.image1,
+                title: storeUpsell?.fields?.title_long,
+            })
+        }
         setStoreId(storeId);
         setTerminalId(terminalId);
+        setTerminalInfo(terminalData)
     }, []);
 
     const closeDialog = () => {
@@ -90,7 +114,6 @@ const ConfirmOrder = () => {
 
     const getDeviceStatus = () => {
         const { eft } = devices;
-        //console.log('eft are', eft)
         let config = {
             method: "get",
             maxBodyLength: Infinity,
@@ -178,10 +201,10 @@ const ConfirmOrder = () => {
             });
     };
 
-    const handlePayment = () => {
+    const handlePayment = (sessionid) => {
         setIsSubmitted(true);
         if (selectedMethod.title.toLowerCase() === "cash") {
-            return handleCashPayment();
+            return handleCashPayment(sessionid);
         } else {
             const timeOut = timeOutTime > 0 ? timeOutTime * 1000 : 30000;
             //if (isDeviceActive) {
@@ -212,7 +235,7 @@ const ConfirmOrder = () => {
     };
 
     const handleWebSocket = (socketurl, timer) => {
-        const { deviceid } = selectedMethod
+        const { deviceid } = selectedMethod;
         const { totalamount } = cartDetail;
         const ws = new WebSocket(socketurl);
         const uId = "EFT_" + new Date().getTime();
@@ -332,18 +355,19 @@ const ConfirmOrder = () => {
         setIsSubmitted(false);
     };
 
-    const handleCashPayment = async () => {
+    const handleCashPayment = async (session) => {
         try {
             const { cartid, orderid, totalamount } = cartDetail;
+            const newSessionId = session ? session : sessionid
             const paymentData = {
                 description: "cash",
                 orderid,
                 payamount: totalamount,
                 paytype: "Cash",
-                paytyperef: "Cash",
+                paytyperef: "Cash"
             };
             const result = await axios.post(
-                `${URL}/pos/v1/cart/${cartid}/payment?${sessionid}`,
+                `${URL}/pos/v1/cart/${cartid}/payment?${newSessionId}`,
                 JSON.stringify(paymentData),
                 {
                     headers: {
@@ -385,6 +409,7 @@ const ConfirmOrder = () => {
             );
             setOrderNumber(data);
             setIsSuccess(true);
+            storage.remove('noUpSell')
         } catch (error) {
             console.error("Error closing cart:", error);
         }
@@ -405,6 +430,7 @@ const ConfirmOrder = () => {
                 },
             );
             storage.remove("currCart");
+            storage.remove('noUpSell')
             navigate("/", { replace: true });
         } catch (error) {
             console.error("Error voiding cart:", error);
@@ -496,7 +522,7 @@ const ConfirmOrder = () => {
                         title: r.title,
                         tagtype: r.tagtypevalue,
                         deviceid: r?.additionalfields?.deviceid,
-                        additionalfields: r?.additionalfields
+                        additionalfields: r?.additionalfields,
                     }))
                     .filter(Boolean);
                 setTenderTypes(tenderTypes);
@@ -547,7 +573,7 @@ const ConfirmOrder = () => {
                                 />
                             </div>
                         </div>
-                        <h2 style={{ fontSize: '16pt'}}>Confirm Order</h2>
+                        <h2 style={{ fontSize: "16pt" }}>Confirm Order</h2>
                         <div
                             className="clsbtn cursor-pointer"
                             onClick={() => setDialogVisible(true)}
@@ -560,7 +586,7 @@ const ConfirmOrder = () => {
                         style={{ paddingBottom: "280px" }}
                     >
                         <div className="mb-4">
-                            <h3 style={{ fontSize: '12pt'}}>Order Items</h3>
+                            <h3 style={{ fontSize: "12pt" }}>Order Items</h3>
                             {cartDetail.items?.map((item, index) => (
                                 <OrderItem
                                     item={item}
@@ -621,8 +647,7 @@ const ConfirmOrder = () => {
         </>
     );
     const checkMember = () => {
-        //handlePayment();
-        setVisible(true)
+        setVisible(true);
     };
 
     const accept = () => clearCart();
@@ -642,17 +667,84 @@ const ConfirmOrder = () => {
     };
 
     const handleExistingMember = (member) => {
-        setVisible(false)
-        handlePayment();
+        setVisible(false);
+        updateCartWithMember(member)
+    };
+
+    const updateCartWithMember = member => {
+        const { orderid, cartid } = cartDetail
+        const { memberid } = member
+        const data = {
+            orderid,
+            memberid
+        }
+
+        let config = {
+            method: 'put',
+            url: `${URL}/pos/v1/cart/${cartid}/update/partial/member?sessionid=${sessionid}`,
+            headers: { 
+              'Authorization': token, 
+              'Content-Type': 'application/json'
+            },
+            data : data
+          };
+          
+          axios.request(config)
+          .then((response) => {
+            const { sessionid } = response.data
+            setSessionId(sessionid)
+            storage.set('sessionid', sessionid)
+            handlePayment(sessionid)
+          })
+          .catch((error) => {
+            console.log(error);
+          });
     }
 
     const handleSkip = () => {
-        setVisible(false)
+        setVisible(false);
         handlePayment();
-    }
+    };
 
     const placeOrder = () => {
-        memFunc ? checkMember() : handlePayment()
+        const { additionalfields } = terminalInfo
+        const shownUpSell = storage.get('noUpSell')
+        const { items } = cartDetail
+        const { productCode } = upsellProduct
+        const exists = items.some(item => item.productcode === productCode);
+        if (isUpSell && !shownUpSell && !exists) {
+            setUpSellVisible(true)
+        }
+        else if (additionalfields?.enablemember === 'Y') {
+            checkMember()
+        }
+        else {
+            handlePayment()
+        }
+        //additionalfields?.enablemember === 'Y' ? checkMember() : handlePayment();
+        //handlePayment()
+    };
+
+    const handleHideUpsell = () => {
+        const { additionalfields } = terminalInfo
+        setUpSellVisible(false)
+        additionalfields?.enablemember === 'Y' ? checkMember() : handlePayment();
+    }
+
+    const [signupVisible, setSignUpVisible] = useState(false)
+
+    const handleSignUpLink = () => {
+        setVisible(false)
+        setSignUpVisible(true)
+    }
+
+    const handleNewMember = (member) => {
+        if (member?.memberid) {
+            updateCartWithMember(member)
+        }
+        else {
+            handlePayment()
+        }
     }
 
     return (
@@ -668,7 +760,27 @@ const ConfirmOrder = () => {
                     handleBack={handleBack}
                 />
             )}
-            <OrderDialog handleSkip={handleSkip} visible={visible} closeDialog={closeDialog} handleExistingMember={handleExistingMember} />
+            <OrderDialog
+                handleSkip={handleSkip}
+                visible={visible}
+                closeDialog={closeDialog}
+                handleExistingMember={handleExistingMember}
+                handleSignUpLink={handleSignUpLink}
+            />
+            <NewMemberDialog 
+                visible={signupVisible}
+                onHide={() => setSignUpVisible(false)}
+                handleNewMember={handleNewMember}
+            />
+            {upsellProduct?.productCode && (
+                <UpSellDialog 
+                visible={upSellVisible}
+                onHide={() => setUpSellVisible(false)}
+                product={upsellProduct}
+                handleHideUpsell={handleHideUpsell}
+            />
+            )}
+            
         </>
     );
 };
@@ -679,33 +791,41 @@ const PaymentMethodSelector = ({
     handleSelection,
 }) => {
     const getTenderInfo = (tender) => {
-        const { title, additionalfields } = tender
-        const { tenderimg } = additionalfields
+        const { title, additionalfields } = tender;
+        const { tenderimg } = additionalfields;
         if (tenderimg.length > 0) {
-            return <img src={URL+tenderimg} style={{ height: '50px' }} />
+            return <img src={URL + tenderimg} style={{ width: "100%" }} />;
         }
-        return title
-    }
+        return <div className='p-4'>{title}</div>;
+    };
     return (
         <div className="mb-4">
-        <h3 className="pl-4" style={{ marginTop: '8px'}}>Choose Payment Method</h3>
-        <div className="flex px-4" style={{ overflowY: 'scroll'}}>
-            {tenderTypes.map((tender, i) => (
-                <div
-                    key={i}
-                    className={`col-4 flex justify-content-center align-items-center mr-2 p-3 payment-option 
+            <h3 className="pl-4" style={{ marginTop: "8px" }}>
+                Choose Payment Method
+            </h3>
+            <div className="flex px-4" style={{ overflowY: "scroll" }}>
+                {tenderTypes.map((tender, i) => (
+                    <div
+                        key={i}
+                        className={`flex justify-content-center align-items-center mr-2 payment-option 
                         ${selectedMethod === tender ? "selected" : ""}`}
-                    onClick={() => handleSelection(tender)}
-                >
-                    {getTenderInfo(tender)}
-                </div>
-            ))}
+                        onClick={() => handleSelection(tender)}
+                    >
+                        {getTenderInfo(tender)}
+                    </div>
+                ))}
+            </div>
         </div>
-    </div>
-    )
-}
+    );
+};
 
-const OrderDialog = ({ visible, closeDialog, handleExistingMember, handleSkip }) => {
+const OrderDialog = ({
+    visible,
+    closeDialog,
+    handleExistingMember,
+    handleSkip,
+    handleSignUpLink
+}) => {
     const [memberEmail, setMemberEmail] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
 
@@ -732,7 +852,7 @@ const OrderDialog = ({ visible, closeDialog, handleExistingMember, handleSkip })
             .request(config)
             .then((response) => {
                 if (response.status === 200 && response.data?.length > 0) {
-                    handleExistingMember(response.data[0])
+                    handleExistingMember(response.data[0]);
                 } else {
                     setErrorMessage("Email address not found!");
                 }
@@ -784,21 +904,17 @@ const OrderDialog = ({ visible, closeDialog, handleExistingMember, handleSkip })
                     <span>OR</span>
                 </Divider>
                 <p className="signup-text text-center">
-                    <a href="#" className="signup-link">
+                    <span className="signup-link" onClick={handleSignUpLink}>
                         Sign up
-                    </a>{" "}
-                    for a free voucher
+                    </span>
                 </p>
                 <p className="skip-link text-right cursor-pointer">
-                    <span onClick={handleSkip}>
-                        skip
-                    </span>
+                    <span onClick={handleSkip}>skip</span>
                 </p>
             </div>
         </Dialog>
     );
 };
-
 
 // Extracted Place Order Button Component
 const PlaceOrderButton = ({

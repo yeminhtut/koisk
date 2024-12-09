@@ -35,8 +35,10 @@ const OrderItem = ({
         }
     };
 
-    const getItemAddonDescriptions = () =>
-    itemAddOn.map((addon) => addon.description).join(", ") || "";
+    const getItemAddonDescriptions = () => {
+        const sorted = itemAddOn.sort((a, b) => a.additionalfields.sortOrder - b.additionalfields.sortOrder);
+        return sorted.map((addon) => addon.description).join(", ") || "";
+    }
 
     const getTotalAmount = () => {
         const addonsTotal = itemAddOn.reduce((sum, addon) => sum + addon.totalamount, 0);

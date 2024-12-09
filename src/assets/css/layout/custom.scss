@@ -506,7 +506,6 @@ body {
 
 .payment-option {
   border: 2px solid #ccc;
-  padding: 20px;
   width: 150px;
   text-align: center;
   cursor: pointer;
@@ -825,6 +824,12 @@ body {
 .custom-btn {
   border: none;
   border-radius: 0px;
+}
+
+.hnh-dialog label {
+  margin-bottom: 4px;
+  margin-top: 4px;
+  display: block;
 }
 
 

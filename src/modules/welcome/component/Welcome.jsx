@@ -58,11 +58,31 @@ const WelcomeComponent = () => {
     const fetchData = async () => {
         try {
             await getPrinterConfig();
-            //await getTerminalBirInfo();
+            await getTerminalInfo();
             await getInteractiveConfig();
             await getImage();
         } catch (error) {
             console.error("Error fetching data", error);
+        }
+    };
+
+    const getTerminalInfo = async () => {
+        const config = {
+            method: "get",
+            url: `${URL}/system/v1/store/device/search/fields?storeid=${storeid}&terminalid=${terminalid}&devicegroup=terminal&pagesize=10&pageno=1`,
+            headers: { Authorization: AuthorizationHeader },
+        };
+
+        try {
+            const response = await axios.request(config);
+            if (response.status !== 206) {
+                localStorage.setItem(
+                    "terminalInfo",
+                    JSON.stringify(response.data[0]),
+                );
+            }
+        } catch (error) {
+            console.error("Error fetching Printer Config", error);
         }
     };
 

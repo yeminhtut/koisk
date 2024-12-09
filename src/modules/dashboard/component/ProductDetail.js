@@ -11,41 +11,39 @@ const URL = window?.config?.END_POINT;
 const ProductDetail = () => {
     const navigate = useNavigate();
     const toast = useRef(null);
-    const params = useLocation();
-    const { state } = params;
+    const { state } = useLocation();
     const { isEdit, record } = state;
 
     const [quantity, setQuantity] = useState(1);
     const [productAddons, setProductAddon] = useState([]);
     const [selectedOptions, setSelectedOptions] = useState([]);
     const [totalPrice, setTotalPrice] = useState(0);
-
-    const handleCloseDetail = () => {
-        const targetPath = isEdit ? "/confirm-order" : "/item-listing"
-        navigate(targetPath, { replace: true });
-    };
-    
+    const [item, setItem] = useState({});
+    const [currCart, setCurrCart] = useState({});
 
     const storeid = storage.get("storeid");
     const terminalid = storage.get("terminalid");
     const currency = storage.get("currency");
     const token = storage.get("token");
 
-    const [item, setItem] = useState({});
-
-    const [currCart, setCurrCart] = useState({});
+    const handleCloseDetail = () => {
+        navigate(isEdit ? "/confirm-order" : "/item-listing", {
+            replace: true,
+        });
+    };
 
     useEffect(() => {
-        if (!isEdit) {
-            setItem(record);
-        } else {
+        if (isEdit) {
             const itemList = JSON.parse(storage.get("storeProduct"));
             const editItem = itemList.find(
-                (il) => il.productcode == record.productcode,
+                (il) => il.productcode === record.productcode,
             );
-            setItem(editItem); // find and search
+            setQuantity(record.quantity);
+            setItem(editItem);
+        } else {
+            setItem(record);
         }
-    }, [isEdit]);
+    }, [isEdit, record]);
 
     useEffect(() => {
         const cart = JSON.parse(storage.get("currCart"));
@@ -71,51 +69,65 @@ const ProductDetail = () => {
     }, [item, quantity, selectedOptions]);
 
     useEffect(() => {
-        if (!isEdit && productAddons && productAddons.length > 0) {
-            const output = productAddons.map((pao, i) => {
-                const { defaultSelected } = pao;
-                if (defaultSelected && defaultSelected.id) {
+        if (productAddons?.length > 0) {
+            const cleanedData = isEdit
+                ? handleEditAddons()
+                : handleDefaultAddons();
+            setSelectedOptions(cleanedData);
+        }
+    }, [productAddons, isEdit]);
+
+    function handleDefaultAddons() {
+        return productAddons
+            .map((pao, i) => {
+                const { defaultSelected, sortOrder } = pao;
+                if (defaultSelected?.id) {
                     const {
                         groupid,
                         productpricecode,
+                        addgroup,
                         articlefields,
                         productcode,
+                        itemidx,
                     } = defaultSelected;
                     return {
                         [groupid]: productpricecode,
                         index: i + 1,
                         groupid,
-                        title: articlefields.title,
-                        productcode: productcode,
+                        title: addgroup.articlefields.title,
+                        productcode,
                         productpricecode,
+                        itemidx,
+                        additionalfields: { sortOrder },
                     };
                 }
+            })
+            .filter(Boolean);
+    }
+
+    const handleEditAddons = () => {
+        const editAddons = record.addons.map((item) => item.productcode);
+        const result = [];
+        productAddons.forEach((item) => {
+            item.addons.forEach((addon, index) => {
+                if (editAddons.includes(addon.productcode)) {
+                    result.push({
+                        [addon.groupid]: addon.productpricecode,
+                        index: index + 1,
+                        groupid: addon.groupid,
+                        title: addon.articlefields.title,
+                        productcode: addon.productcode,
+                        productpricecode: addon.productpricecode,
+                        price: addon.price,
+                        additionalfields: {
+                            sortOrder: addon?.addgroup?.sortorder,
+                        },
+                    });
+                }
             });
-            const cleanedData = output.filter((item) => item !== undefined);
-            setSelectedOptions(cleanedData);
-        }
-        else if (isEdit && productAddons && productAddons.length > 0) {
-            const editAddons = record.addons.map(item => item.productcode);
-            const result = [];
-            productAddons.forEach((item) => {
-                item.addons.forEach((addon, index) => {
-                    if (editAddons.includes(addon.productcode)) {
-                        result.push({
-                            [addon.groupid]: addon.productpricecode,
-                            index: index + 1,
-                            groupid: addon.groupid,
-                            title: addon.articlefields.title,
-                            productcode: addon.productcode,
-                            productpricecode: addon.productpricecode,
-                            price: addon.price
-                        });
-                    }
-                });
-            });
-            const cleanedData = result.filter((item) => item !== undefined);
-            setSelectedOptions(cleanedData);
-        }
-    }, [productAddons, isEdit]);
+        });
+        return result.filter(Boolean);
+    };
 
     const getProductAddOn = async () => {
         const { productpricecode } = item;
@@ -142,8 +154,42 @@ const ProductDetail = () => {
             ? `${URL}/${item.images.productimageone}`
             : `${process.env.PUBLIC_URL}/assets/images/ic_nonproduct.png`;
 
-    const handleAdd = () =>
-        currCart?.cartid ? addItem(currCart) : createCart();
+    const handleAdd = async () => {
+        try {
+            const posActive = await getPosStatus();
+            if (posActive === 'Y') {
+                currCart?.cartid ? addItem(currCart) : createCart();
+            }
+            else {
+                toast.current.show({
+                    severity: "error",
+                    summary: "Error",
+                    detail: 'store not open',
+                });
+            }
+            
+        } catch (error) {
+            console.error("Error fetching POS status:", error);
+        }
+    };
+    
+    const getPosStatus = async () => {
+        const config = {
+            method: "get",
+            url: `${URL}/pos/v1/sales/order/place?storeid=${storeid}`,
+            headers: {
+                Authorization: token
+            }
+        };
+    
+        try {
+            const response = await axios.request(config);
+            return response.data.toorder;
+        } catch (error) {
+            console.error(error);
+            throw error;
+        }
+    };
 
     const addItem = async (cart) => {
         try {
@@ -168,34 +214,48 @@ const ProductDetail = () => {
                         orderid,
                         productpricecode: obj[groupId],
                         quantity,
+                        itemidx: obj.itemidx,
+                        additionalfields: {
+                            sortOrder: obj?.additionalfields?.sortOrder,
+                        },
                     };
                 }); // old one
             }
 
             if (record.addons) {
-                const oriArr = record.addons.map(ao => ({
+                const oriArr = record.addons.map((ao) => ({
                     orderid: ao.orderid,
                     productpricecode: `${ao.storeproductid}-${ao.productcode}`,
                     quantity: 1,
-                    idx: ao.idx
+                    idx: ao.idx,
+                    itemidx: ao.itemidx,
+                    additionalfields: {
+                        sortOrder: ao?.sortOrder,
+                    },
                 }));
-                
+
                 // Ensure all elements from A are included in B
-                oriArr.forEach(aItem => {
-                    const foundInB = data.addons.some(bItem => bItem.productpricecode === aItem.productpricecode);
+                oriArr.forEach((aItem) => {
+                    const foundInB = data.addons.some(
+                        (bItem) =>
+                            bItem.productpricecode === aItem.productpricecode,
+                    );
                     if (!foundInB) {
                         data.addons.push({
                             orderid: aItem.orderid,
                             productpricecode: aItem.productpricecode,
                             quantity: 0,
-                            idx: aItem.idx
+                            idx: aItem.idx,
                         });
                     }
                 });
-                
+
                 // Add `idx` to existing elements in B if they match with A
-                data.addons.forEach(bItem => {
-                    const matchInA = oriArr.find(aItem => aItem.productpricecode === bItem.productpricecode);
+                data.addons.forEach((bItem) => {
+                    const matchInA = oriArr.find(
+                        (aItem) =>
+                            aItem.productpricecode === bItem.productpricecode,
+                    );
                     if (matchInA) {
                         bItem.idx = matchInA.idx;
                     }
@@ -334,6 +394,7 @@ const ProductDetail = () => {
                     index: i + 1,
                     groupId: addon,
                     productcode: option.productcode,
+                    itemidx: option.itemidx,
                 };
                 return updatedOptions;
             }
@@ -347,21 +408,28 @@ const ProductDetail = () => {
                     index: i + 1,
                     groupId: addon,
                     productcode: option.productcode,
+                    itemidx: option.itemidx,
                 },
             ];
         });
     };
 
-    const handleOptionChange = (addon, checked, option, productpricecode) => {
+    const handleOptionChange = (addon, option, productpricecode, group) => {
         const flattened = selectedOptions.flatMap((obj) => Object.values(obj));
         const isIncluded = flattened.includes(productpricecode);
-        const { price } = option;
+        const { price, itemidx } = option;
+        const { sortOrder } = group;
         setSelectedOptions((prevSelectedOptions) => {
             if (!isIncluded) {
                 // If checked, store the productpricecode directly as a string
                 return [
                     ...prevSelectedOptions,
-                    { [addon]: productpricecode, price },
+                    {
+                        [addon]: productpricecode,
+                        price,
+                        itemidx,
+                        additionalfields: { sortOrder },
+                    },
                 ];
             } else {
                 // If unchecked, remove the productpricecode by setting it to null or undefined
@@ -515,9 +583,9 @@ const ProductDetail = () => {
                                                                 onChange={(e) =>
                                                                     handleOptionChange(
                                                                         group.addon,
-                                                                        e.checked,
                                                                         option,
                                                                         option.productpricecode,
+                                                                        group,
                                                                     )
                                                                 }
                                                                 className="hidden-checkbox"
@@ -567,7 +635,8 @@ const ProductDetail = () => {
                             onClick={handleAdd}
                         >
                             <div className="w-full">
-                                add to order {currency}{totalPrice.toFixed(2)}
+                                add to order {currency}
+                                {totalPrice.toFixed(2)}
                             </div>
                         </div>
                     </div>

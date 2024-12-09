@@ -269,11 +269,11 @@ const ProductList = () => {
                                     <div className="menu-item p-2 cursor-pointer" key={itemIndex} onClick={() => handleAddRedirect(item)}>
                                     <img
                                         src={getImage(item)}
-                                        alt={item.articlefields.title}
+                                        alt={item?.articlefields?.title}
                                         className="menu-item-image"
                                     />
                                     <div className="menu-item-details">
-                                        <h3 className="standard-header">{item.articlefields.title}</h3>
+                                        <h3 className="standard-header">{item?.articlefields?.title}</h3>
                                         <p className="mb-0">
                                             {item?.articlefields
                                                 ?.description ||
