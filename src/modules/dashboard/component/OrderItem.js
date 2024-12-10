@@ -36,7 +36,12 @@ const OrderItem = ({
     };
 
     const getItemAddonDescriptions = () => {
-        const sorted = itemAddOn.sort((a, b) => a.additionalfields.sortOrder - b.additionalfields.sortOrder);
+        const sorted = itemAddOn.sort((a, b) => {
+            const sortOrderA = a.additionalfields?.sortOrder ?? Number.MAX_VALUE;
+            const sortOrderB = b.additionalfields?.sortOrder ?? Number.MAX_VALUE;
+            return sortOrderA - sortOrderB;
+        });
+        
         return sorted.map((addon) => addon.description).join(", ") || "";
     }
 
@@ -56,7 +61,7 @@ const OrderItem = ({
                     <button onClick={decreaseItemQty} className="quantity-btn">
                         -
                     </button>
-                    <span className="mx-3">{quantity}x</span>
+                    <span className="mx-3">{quantity}</span>
                     <button onClick={increaseItemQty} className="quantity-btn">
                         +
                     </button>

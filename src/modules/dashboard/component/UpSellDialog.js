@@ -32,11 +32,12 @@ const UpSellDialog = ({ visible, onHide, product, handleHideUpsell }) => {
             visible={visible}
             modal
             onHide={onHide}
+            className="upsell-dialog"
             content={() => (
                 <div
                     style={{
                         textAlign: "center",
-                        borderRadius: "16px 16px 0 0",
+                        borderRadius: "16px",
                         background: "#FFF",
                     }}
                 >
@@ -45,8 +46,10 @@ const UpSellDialog = ({ visible, onHide, product, handleHideUpsell }) => {
                             src={`${URL}/${image.uri}`}
                             alt="Butterscotch Latte"
                             style={{
-                                width: "100%",
+                                width: "360px",
+                                borderRadius: "16px 16px 0 0",
                             }}
+                            onClick={handleLink}
                         />
                         <span
                             className="pi pi-times"
@@ -71,6 +74,7 @@ const UpSellDialog = ({ visible, onHide, product, handleHideUpsell }) => {
                             fontSize: "18px",
                             paddingTop: "16px",
                         }}
+                        onClick={handleLink}
                     >
                         <span
                             style={{
@@ -84,7 +88,7 @@ const UpSellDialog = ({ visible, onHide, product, handleHideUpsell }) => {
                         </span>
                         <span
                             style={{ color: "#b5850f", fontWeight: "600" }}
-                            onClick={handleLink}
+                            
                         >
                             View Drink
                         </span>

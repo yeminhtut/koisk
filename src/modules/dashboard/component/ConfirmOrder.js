@@ -447,6 +447,7 @@ const ConfirmOrder = () => {
                 ? `${order.storeproductid}-${order.productcode}`
                 : order.productcode,
             quantity: quantity,
+            additionalfields: order.additionalfields
         }));
         return result;
     };
@@ -462,7 +463,7 @@ const ConfirmOrder = () => {
         };
         try {
             const repsonse = await axios.post(
-                `${URL}/pos/v1/cart/${cartid}/item`,
+                `${URL}/pos/v1/cart/${cartid}/item?itemgroup=Y`,
                 JSON.stringify(data),
                 {
                     headers: {

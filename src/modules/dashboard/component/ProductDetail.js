@@ -77,7 +77,7 @@ const ProductDetail = () => {
         }
     }, [productAddons, isEdit]);
 
-    function handleDefaultAddons() {
+    const handleDefaultAddons = () => {
         return productAddons
             .map((pao, i) => {
                 const { defaultSelected, sortOrder } = pao;
@@ -86,7 +86,6 @@ const ProductDetail = () => {
                         groupid,
                         productpricecode,
                         addgroup,
-                        articlefields,
                         productcode,
                         itemidx,
                     } = defaultSelected;
@@ -128,7 +127,6 @@ const ProductDetail = () => {
         });
         return result.filter(Boolean);
     };
-
     const getProductAddOn = async () => {
         const { productpricecode } = item;
         try {
@@ -379,6 +377,7 @@ const ProductDetail = () => {
     const handleRadioOptionChange = (group, option, i) => {
         const { addon } = group;
         const { price, productpricecode } = option;
+        const { sortOrder } = group;
         setSelectedOptions((prevSelectedOptions) => {
             // Check if the key (groupId) already exists
             const existingIndex = prevSelectedOptions.findIndex(
@@ -395,6 +394,7 @@ const ProductDetail = () => {
                     groupId: addon,
                     productcode: option.productcode,
                     itemidx: option.itemidx,
+                    additionalfields: { sortOrder },
                 };
                 return updatedOptions;
             }
@@ -409,6 +409,7 @@ const ProductDetail = () => {
                     groupId: addon,
                     productcode: option.productcode,
                     itemidx: option.itemidx,
+                    additionalfields: { sortOrder },
                 },
             ];
         });

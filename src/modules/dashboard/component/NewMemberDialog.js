@@ -7,9 +7,9 @@ import axios from "axios";
 import DobInput from "./DobInput";
 
 const {
-  END_POINT: URL,
-  AuthorizationHeader: token,
-  MemberLookUp: memFunc,
+    END_POINT: URL,
+    AuthorizationHeader: token,
+    MemberLookUp: memFunc,
 } = window?.config || {};
 
 const NewMemberDialog = ({ visible, onHide, handleNewMember }) => {
@@ -18,7 +18,7 @@ const NewMemberDialog = ({ visible, onHide, handleNewMember }) => {
         lastName: "",
         email: "",
         dob: "",
-        mobile: "",
+        mobileno: "",
     });
 
     const [errors, setErrors] = useState({});
@@ -47,6 +47,9 @@ const NewMemberDialog = ({ visible, onHide, handleNewMember }) => {
         if (!formData.lastName.trim()) {
             newErrors.lastName = "Last name is required.";
         }
+        if (!formData.mobileno.trim()) {
+            newErrors.mobileno = "Mobile number is required.";
+        }
         if (!formData.email.trim()) {
             newErrors.email = "Email address is required.";
         } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
@@ -56,50 +59,49 @@ const NewMemberDialog = ({ visible, onHide, handleNewMember }) => {
     };
 
     const handleSubmit = async () => {
-      const newErrors = validateForm();
-      if (Object.keys(newErrors).length > 0) {
-          setErrors(newErrors);
-          return;
-      }
-  
-      // Prepare the data for the API call
-      const apiData = {
-          userid: "",
-          signupby: "email",
-          firstname: formData.firstName,
-          lastname: formData.lastName,
-          mobileno: formData.mobile,
-          emailid: formData.email,
-          dateofbirth: formData.dob, // Ensure DOB is formatted as 'dd-MM-yyyy'
-      };
-  
-      const config = {
-          method: "post",
-          url: `${URL}/crm/v1/member/save`,
-          headers: {
-              Authorization: token,
-              "Content-Type": "application/json"
-          },
-          data: JSON.stringify(apiData),
-      };
-  
-      try {
-          const response = await axios.request(config);
-          if (response.status == 200) {
-            handleNewMember(response.data)
-          }
-          else {
-            handleNewMember()
-          }
-          // Optionally show a success message or perform further actions
-          // alert("Member saved successfully!");
-          onHide();
-      } catch (error) {
-          handleNewMember()
-          onHide()
-          //alert("An error occurred while saving the member. Please try again.");
-      }
-  };
+        const newErrors = validateForm();
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            return;
+        }
+
+        // Prepare the data for the API call
+        const apiData = {
+            userid: "",
+            signupby: "email",
+            firstname: formData.firstName,
+            lastname: formData.lastName,
+            mobileno: formData.mobileno,
+            emailid: formData.email,
+            dateofbirth: formData.dob, // Ensure DOB is formatted as 'dd-MM-yyyy'
+        };
+
+        const config = {
+            method: "post",
+            url: `${URL}/crm/v1/member/save`,
+            headers: {
+                Authorization: token,
+                "Content-Type": "application/json",
+            },
+            data: JSON.stringify(apiData),
+        };
+
+        try {
+            const response = await axios.request(config);
+            if (response.status == 200) {
+                handleNewMember(response.data);
+            } else {
+                handleNewMember();
+            }
+            // Optionally show a success message or perform further actions
+            // alert("Member saved successfully!");
+            onHide();
+        } catch (error) {
+            handleNewMember();
+            onHide();
+            //alert("An error occurred while saving the member. Please try again.");
+        }
+    };
 
     const renderFooter = () => (
         <div className="w-full">
@@ -115,7 +117,6 @@ const NewMemberDialog = ({ visible, onHide, handleNewMember }) => {
             />
         </div>
     );
-
     return (
         <Dialog
             header={
@@ -132,7 +133,7 @@ const NewMemberDialog = ({ visible, onHide, handleNewMember }) => {
         >
             <div className="p-fluid hnh-dialog">
                 <div className="flex">
-                    <div className="p-field mr-2" style={{ width: '50%'}}>
+                    <div className="p-field mr-2" style={{ width: "50%" }}>
                         <label htmlFor="firstName">first name</label>
                         <InputText
                             id="firstName"
@@ -142,10 +143,12 @@ const NewMemberDialog = ({ visible, onHide, handleNewMember }) => {
                             className={errors.firstName ? "p-invalid" : ""}
                         />
                         {errors.firstName && (
-                            <small className="p-error">{errors.firstName}</small>
+                            <small className="p-error">
+                                {errors.firstName}
+                            </small>
                         )}
                     </div>
-                    <div className="p-field" style={{ width: '50%'}}>
+                    <div className="p-field" style={{ width: "50%" }}>
                         <label htmlFor="lastName">last name</label>
                         <InputText
                             id="lastName"
@@ -180,17 +183,21 @@ const NewMemberDialog = ({ visible, onHide, handleNewMember }) => {
                 </div>
 
                 <div className="p-field">
-                    <label htmlFor="mobile">mobile no.</label>
+                    <label htmlFor="mobileno">mobile no.</label>
                     <InputNumber
-                        id="mobile"
-                        name="mobile"
-                        value={formData.mobile}
+                        id="mobileno"
+                        name="mobileno"
+                        value={formData.mobileno}
+                        useGrouping={false}
                         onChange={(e) =>
                             handleChange({
-                                target: { name: "mobile", value: e.value },
+                                target: { name: "mobileno", value: e.value },
                             })
                         }
                     />
+                    {errors.firstName && (
+                        <small className="p-error">{errors.mobileno}</small>
+                    )}
                 </div>
             </div>
         </Dialog>
