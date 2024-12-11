@@ -76,6 +76,7 @@ const ConfirmOrder = () => {
 
     const closeDialog = () => {
         setVisible(false);
+        setIsSubmitted(false)
     };
 
     useEffect(() => {
@@ -715,9 +716,11 @@ const ConfirmOrder = () => {
         const exists = items.some(item => item.productcode === productCode);
         if (isUpSell && !shownUpSell && !exists) {
             setUpSellVisible(true)
+            setIsSubmitted(true)
         }
         else if (additionalfields?.enablemember === 'Y') {
             checkMember()
+            setIsSubmitted(true)
         }
         else {
             handlePayment()
@@ -729,7 +732,15 @@ const ConfirmOrder = () => {
     const handleHideUpsell = () => {
         const { additionalfields } = terminalInfo
         setUpSellVisible(false)
-        additionalfields?.enablemember === 'Y' ? checkMember() : handlePayment();
+        
+        if (additionalfields?.enablemember === 'Y') {
+            checkMember()
+        }
+        else {
+            setIsSubmitted(false)
+            handlePayment()
+        }
+        //additionalfields?.enablemember === 'Y' ? checkMember() : handlePayment();
     }
 
     const [signupVisible, setSignUpVisible] = useState(false)
@@ -746,6 +757,11 @@ const ConfirmOrder = () => {
         else {
             handlePayment()
         }
+    }
+
+    const handleNewMemberDialogHide = () => {
+        setSignUpVisible(false)
+        setIsSubmitted(false)
     }
 
     return (
@@ -770,7 +786,7 @@ const ConfirmOrder = () => {
             />
             <NewMemberDialog 
                 visible={signupVisible}
-                onHide={() => setSignUpVisible(false)}
+                onHide={handleNewMemberDialogHide}
                 handleNewMember={handleNewMember}
             />
             {upsellProduct?.productCode && (

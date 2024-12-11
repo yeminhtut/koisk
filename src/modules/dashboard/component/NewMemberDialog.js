@@ -8,8 +8,7 @@ import DobInput from "./DobInput";
 
 const {
     END_POINT: URL,
-    AuthorizationHeader: token,
-    MemberLookUp: memFunc,
+    AuthorizationHeader: token
 } = window?.config || {};
 
 const NewMemberDialog = ({ visible, onHide, handleNewMember }) => {
@@ -19,6 +18,8 @@ const NewMemberDialog = ({ visible, onHide, handleNewMember }) => {
         email: "",
         dob: "",
         mobileno: "",
+        countryCode: "",
+        phNumber: ""
     });
 
     const [errors, setErrors] = useState({});
@@ -47,7 +48,7 @@ const NewMemberDialog = ({ visible, onHide, handleNewMember }) => {
         if (!formData.lastName.trim()) {
             newErrors.lastName = "Last name is required.";
         }
-        if (!formData.mobileno.trim()) {
+        if (!formData.phNumber.trim()) {
             newErrors.mobileno = "Mobile number is required.";
         }
         if (!formData.email.trim()) {
@@ -71,10 +72,12 @@ const NewMemberDialog = ({ visible, onHide, handleNewMember }) => {
             signupby: "email",
             firstname: formData.firstName,
             lastname: formData.lastName,
-            mobileno: formData.mobileno,
+            mobileno: formData.countryCode +' ' + formData.phNumber,
             emailid: formData.email,
             dateofbirth: formData.dob, // Ensure DOB is formatted as 'dd-MM-yyyy'
         };
+
+        console.log('here', apiData)
 
         const config = {
             method: "post",
@@ -101,6 +104,18 @@ const NewMemberDialog = ({ visible, onHide, handleNewMember }) => {
             onHide();
             //alert("An error occurred while saving the member. Please try again.");
         }
+    };
+
+    const handleNumberChange = (e) => {
+        const { name, value } = e.target;
+
+        // Allow only numeric input
+        const numericValue = value.replace(/[^0-9]/g, "");
+
+        setFormData({
+            ...formData,
+            [name]: numericValue
+        });
     };
 
     const renderFooter = () => (
@@ -181,21 +196,28 @@ const NewMemberDialog = ({ visible, onHide, handleNewMember }) => {
                     <label htmlFor="dob">date of birth (optional)</label>
                     <DobInput />
                 </div>
-
                 <div className="p-field">
                     <label htmlFor="mobileno">mobile no.</label>
-                    <InputNumber
-                        id="mobileno"
-                        name="mobileno"
-                        value={formData.mobileno}
-                        useGrouping={false}
-                        onChange={(e) =>
-                            handleChange({
-                                target: { name: "mobileno", value: e.value },
-                            })
-                        }
-                    />
-                    {errors.firstName && (
+                    <div className="flex">
+                        <InputText
+                            className="mr-2 col-4"
+                            id="countryCode"
+                            name="countryCode"
+                            value={formData.countryCode}
+                            onChange={handleNumberChange}
+                            maxLength={3} // Optional: Limit the number of digits
+                            placeholder="+82"
+                        />
+                        <InputText
+                            id="phNumber"
+                            name="phNumber"
+                            value={formData.phNumber}
+                            onChange={handleNumberChange}
+                            maxLength={15} // Optional: Limit the number of digits
+                        />
+                    </div>
+                    
+                    {errors.mobileno && (
                         <small className="p-error">{errors.mobileno}</small>
                     )}
                 </div>
