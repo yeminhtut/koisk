@@ -77,29 +77,35 @@ const ProductAddon = ({
     const getParentGroup = (option) => {
         const { itemmap } = option
         if (!itemmap) return true;
-        const result = Object.entries(itemmap).reduce(
-            (acc, [groupId, indexString]) => {
-                const targetIndexes = indexString.split(", ").map(Number);
+        // const result = Object.entries(itemmap).reduce(
+        //     (acc, [groupId, indexString]) => {
+        //         const targetIndexes = indexString.split(", ").map(Number);
 
-                // Filter selectedOptions based on groupId and targetIndexes
-                const matches = selectedOptions.filter(
-                    (item) =>
-                        item.groupId === groupId &&
-                        targetIndexes.includes(item.index),
-                );
+        //         // Filter selectedOptions based on groupId and targetIndexes
+        //         const matches = selectedOptions.filter(
+        //             (item) =>
+        //                 item.groupId === groupId &&
+        //                 targetIndexes.includes(item.index),
+        //         );
 
-                // If matches are found, accumulate their indexes in acc
-                if (matches.length > 0) {
-                    acc[groupId] = matches.map((item) => item.index).join(", ");
-                }
+        //         // If matches are found, accumulate their indexes in acc
+        //         if (matches.length > 0) {
+        //             acc[groupId] = matches.map((item) => item.index).join(", ");
+        //         }
 
-                return acc;
-            },
-            {},
-        );
-        return !isEmptyObject(result);
+        //         return acc;
+        //     },
+        //     {},
+        // );
+        //return !isEmptyObject(result);
+        console.log('option', option)
+        const { additionalfields } = option
+
+        const flattened = selectedOptions.flatMap((obj) => Object.values(obj));
+        console.log(flattened)
+        return true
     };
-    console.log('here', productAddons)
+    //console.log('here', productAddons)
     const processAddons = (addons) => {
         // Create a map for easy access to addon items by addon and itemidx
         const parentMap = {};
@@ -129,7 +135,9 @@ const ProductAddon = ({
                     }
     
                     // Add `additionalfields` property
-                    addon.additionalfields = additionalFields;
+                    addon.additionalfields = {
+                        parentProductCode: additionalFields
+                    };
                 }
             });
         });
