@@ -46,7 +46,7 @@ const UpSellDialog = ({ visible, onHide, product, handleHideUpsell }) => {
                             src={`${URL}/${image.uri}`}
                             alt="Butterscotch Latte"
                             style={{
-                                width: "360px",
+                                width: "280px",
                                 borderRadius: "16px 16px 0 0",
                             }}
                             onClick={handleLink}

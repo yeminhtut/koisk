@@ -18,7 +18,7 @@ const MenuItem = ({ label, imgSrc, handleCloseDetail }) => {
             <img
                 src={imgSrc}
                 alt={label}
-                style={{ width: "80px", height: "80px" }}
+                style={{ width: "50px", height: "50px" }}
             />
         </div>
     );

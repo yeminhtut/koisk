@@ -5,6 +5,7 @@ import { Toast } from "primereact/toast";
 import { useNavigate, useLocation } from "react-router-dom";
 import storage from "../../../utils/storage";
 import MenuItem from "./MenuItem";
+import ProductAddon from './ProductAddon';
 
 const URL = window?.config?.END_POINT;
 
@@ -87,7 +88,7 @@ const ProductDetail = () => {
                         productpricecode,
                         addgroup,
                         productcode,
-                        itemidx,
+                        itemidx
                     } = defaultSelected;
                     return {
                         [groupid]: productpricecode,
@@ -98,6 +99,7 @@ const ProductDetail = () => {
                         productpricecode,
                         itemidx,
                         additionalfields: { sortOrder },
+                        itemmap: defaultSelected?.itemmap
                     };
                 }
             })
@@ -121,12 +123,14 @@ const ProductDetail = () => {
                         additionalfields: {
                             sortOrder: addon?.addgroup?.sortorder,
                         },
+                        itemmap: addon?.itemmap
                     });
                 }
             });
         });
         return result.filter(Boolean);
     };
+
     const getProductAddOn = async () => {
         const { productpricecode } = item;
         try {
@@ -370,7 +374,12 @@ const ProductDetail = () => {
                     })[0],
                 };
             });
-            return addongroupArrays.sort(getSortOrder("sortOrder"));
+            const sortedData = addongroupArrays.map((obj) => ({
+                ...obj,
+                addons: obj.addons.sort((a, b) => a.itemidx - b.itemidx),
+              }));
+              
+            return sortedData.sort(getSortOrder("sortOrder"));
         }
     };
 
@@ -451,9 +460,9 @@ const ProductDetail = () => {
         );
     };
 
-    const getParentGroup = ({ itemmap }) => {
+    const getParentGroup = (option) => {
+        const { itemmap } = option
         if (!itemmap) return true;
-
         const result = Object.entries(itemmap).reduce(
             (acc, [groupId, indexString]) => {
                 const targetIndexes = indexString.split(", ").map(Number);
@@ -474,7 +483,6 @@ const ProductDetail = () => {
             },
             {},
         );
-
         return !isEmptyObject(result);
     };
 
@@ -489,7 +497,6 @@ const ProductDetail = () => {
             navigate("/item-listing", { replace: true });
         }
     };
-
     return (
         <>
             {item && item.productcode && (
@@ -501,7 +508,7 @@ const ProductDetail = () => {
                         handleCloseDetail={handleCloseDetail}
                         isEdit={isEdit}
                     />
-                    <div className="item-info p-4">
+                    <div className="item-info px-4 pt-4 pb-2">
                         <h2>{item?.articlefields?.title}</h2>
                         <p>{item?.articlefields?.description}</p>
                     </div>
@@ -593,7 +600,7 @@ const ProductDetail = () => {
                                                             />
                                                             <span
                                                                 className={`checkmark ${getChecked(option) ? "checked" : ""}`}
-                                                            ></span>
+                                                            />
                                                         </label>
                                                         <label
                                                             htmlFor={`${group.addon}_${option.id}`}
@@ -617,6 +624,10 @@ const ProductDetail = () => {
                                 </div>
                             ))}
                     </div>
+                    {/* <ProductAddon
+                        productAddons={productAddons}
+                        selectedOptions={selectedOptions}
+                    /> */}
                     <div className="flex flex-column mt-auto">
                         <div className="quantity-selector">
                             <button
