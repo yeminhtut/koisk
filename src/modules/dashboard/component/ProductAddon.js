@@ -65,14 +65,79 @@ const ProductAddon = ({
     handleRadioOptionChange,
     handleOptionChange
 }) => {
+
     const getChecked = (option) => {
         return selectedOptions.some((item) =>
             Object.values(item).includes(option.productpricecode),
         );
     };
-    const getParentGroup = () => {
-        return true
-    }
+
+    const isEmptyObject = (obj) => Object.keys(obj).length === 0;
+
+    const getParentGroup = (option) => {
+        const { itemmap } = option
+        if (!itemmap) return true;
+        const result = Object.entries(itemmap).reduce(
+            (acc, [groupId, indexString]) => {
+                const targetIndexes = indexString.split(", ").map(Number);
+
+                // Filter selectedOptions based on groupId and targetIndexes
+                const matches = selectedOptions.filter(
+                    (item) =>
+                        item.groupId === groupId &&
+                        targetIndexes.includes(item.index),
+                );
+
+                // If matches are found, accumulate their indexes in acc
+                if (matches.length > 0) {
+                    acc[groupId] = matches.map((item) => item.index).join(", ");
+                }
+
+                return acc;
+            },
+            {},
+        );
+        return !isEmptyObject(result);
+    };
+    console.log('here', productAddons)
+    const processAddons = (addons) => {
+        // Create a map for easy access to addon items by addon and itemidx
+        const parentMap = {};
+        addons.forEach((addonGroup) => {
+            parentMap[addonGroup.addon] = addonGroup.addons.reduce((acc, addon) => {
+                acc[addon.itemidx] = addon.articlefields.productcode;
+                return acc;
+            }, {});
+        });
+    
+        // Traverse the addons array and add `additionalfields` where necessary
+        addons.forEach((addonGroup) => {
+            addonGroup.addons.forEach((addon) => {
+                if (addon.itemmap) {
+                    const additionalFields = [];
+    
+                    // Iterate through each parent addon
+                    for (const [parentAddon, parentItemIdxStr] of Object.entries(addon.itemmap)) {
+                        const parentItemIdxList = parentItemIdxStr.split(',');
+                        parentItemIdxList.forEach((parentItemIdx) => {
+                            const parentProductCode =
+                                parentMap[parentAddon]?.[parentItemIdx];
+                            if (parentProductCode) {
+                                additionalFields.push(parentProductCode);
+                            }
+                        });
+                    }
+    
+                    // Add `additionalfields` property
+                    addon.additionalfields = additionalFields;
+                }
+            });
+        });
+    
+        return addons;
+    };
+    const updatedData = processAddons(productAddons);
+console.log(updatedData);
     return (
         <div>
             {productAddons.map((group, i) => (

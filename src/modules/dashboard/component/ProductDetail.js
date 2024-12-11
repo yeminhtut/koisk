@@ -513,7 +513,7 @@ const ProductDetail = () => {
                         <p>{item?.articlefields?.description}</p>
                     </div>
 
-                    <div>
+                    {/* <div>
                         {productAddons &&
                             productAddons.map((group, i) => (
                                 <div key={i} className="field px-4">
@@ -623,11 +623,13 @@ const ProductDetail = () => {
                                     <Divider />
                                 </div>
                             ))}
-                    </div>
-                    {/* <ProductAddon
+                    </div> */}
+                    <ProductAddon
                         productAddons={productAddons}
                         selectedOptions={selectedOptions}
-                    /> */}
+                        handleOptionChange={handleOptionChange}
+                        handleRadioOptionChange={handleRadioOptionChange}
+                    />
                     <div className="flex flex-column mt-auto">
                         <div className="quantity-selector">
                             <button
