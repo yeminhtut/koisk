@@ -98,12 +98,20 @@ const ProductAddon = ({
         //     {},
         // );
         //return !isEmptyObject(result);
-        console.log('option', option)
+        // console.log('option', option)
         const { additionalfields } = option
-
-        const flattened = selectedOptions.flatMap((obj) => Object.values(obj));
-        console.log(flattened)
-        return true
+        const { parentProductCode } = additionalfields
+        if (parentProductCode.length > 0) {
+            parentProductCode.map(ppc => {
+                const result = selectedOptions.map(item => item.productcode);
+                const isIncluded = result.includes(ppc);
+                console.log(result)
+                console.log(ppc)
+                console.log('go', isIncluded)
+                return isIncluded ? true : false
+            })
+        }
+        return false
     };
     //console.log('here', productAddons)
     const processAddons = (addons) => {
@@ -145,7 +153,7 @@ const ProductAddon = ({
         return addons;
     };
     const updatedData = processAddons(productAddons);
-console.log(updatedData);
+    console.log(updatedData);
     return (
         <div>
             {productAddons.map((group, i) => (
