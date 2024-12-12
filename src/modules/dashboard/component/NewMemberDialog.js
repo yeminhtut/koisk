@@ -121,7 +121,7 @@ const NewMemberDialog = ({ visible, onHide, handleNewMember }) => {
     const renderFooter = () => (
         <div className="w-full">
             <Button
-                label="Done"
+                label="done"
                 onClick={handleSubmit}
                 className="p-button-custom w-full"
                 style={{

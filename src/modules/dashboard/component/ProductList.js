@@ -255,7 +255,11 @@ const ProductList = () => {
                 <div className="chat-area">
                     <div
                         className="category-content"
-                        style={{ height: "100%", overflowY: "auto" }}
+                        style={{ 
+                            height: "100%", 
+                            overflowY: "auto",
+                            paddingBottom: checkCartValue() || cartDetail?.cartid ? "80px" : "0px",
+                        }}
                     >
                         {menuItems.map((category, index) => (
                             <div

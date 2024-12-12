@@ -271,8 +271,8 @@ const ProductDetail = () => {
 
             // console.log(data)
             // return
-
-            data.addons = checkParentProductCode(data.addons)
+            console.log('done', data.addons)
+            data.addons = data?.addons ? checkParentProductCode(data.addons) : []
 
             const payloadData = JSON.stringify(data);
 
@@ -504,12 +504,15 @@ const ProductDetail = () => {
                         <h2>{item?.articlefields?.title}</h2>
                         <p>{item?.articlefields?.description}</p>
                     </div>
-                    <ProductAddon
+                    {productAddons && productAddons.length > 0 && (
+                        <ProductAddon
                         productAddons={productAddons}
                         selectedOptions={selectedOptions}
                         handleOptionChange={handleOptionChange}
                         handleRadioOptionChange={handleRadioOptionChange}
                     />
+                    )}
+                    
                     <div className="flex flex-column mt-auto">
                         <div className="quantity-selector">
                             <button
