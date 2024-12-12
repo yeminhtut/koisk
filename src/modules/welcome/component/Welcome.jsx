@@ -126,9 +126,9 @@ const WelcomeComponent = () => {
         try {
             const response = await axios.request(config);
             if (response.status === 200) {
-                const result = response.data.filter(item => 
-                    item.fields?.properties?.storeid.split(',').includes(storeid)
-                );
+                const result = response.data.filter(item => {
+                    return item.fields?.properties?.storeid.split(',').includes(storeid)
+                });
                 if (result.length > 0) {
                     storage.set('storeUpsell', JSON.stringify(result[0]))
                 }
