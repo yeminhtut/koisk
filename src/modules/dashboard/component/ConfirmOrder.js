@@ -896,7 +896,7 @@ const OrderDialog = ({
                 </label>
                 <InputText
                     id="email"
-                    className={`email-input w-full mt-4 ${
+                    className={`email-input w-full mt-2 ${
                         errorMessage ? "p-invalid" : ""
                     }`}
                     placeholder="ja12_123@gmail.com"
@@ -910,12 +910,12 @@ const OrderDialog = ({
                     type="button"
                     className="w-full mt-2"
                     style={{
-                        backgroundColor: "#51545D",
+                        backgroundColor: "#707070",
                         color: "#FFF",
                         fontSize: "18px",
                     }}
                     onClick={handleMember}
-                    label="Done"
+                    label="done"
                 />
                 <Divider align="center">
                     <span>OR</span>

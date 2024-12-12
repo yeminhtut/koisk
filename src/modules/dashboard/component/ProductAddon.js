@@ -93,7 +93,6 @@ const ProductAddon = ({
     };
 
     const processAddons = (addons) => {
-        console.log('here', addons)
         if (addons.length < 1) {
             return []
         }

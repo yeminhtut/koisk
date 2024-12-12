@@ -125,6 +125,7 @@ const ProductDetail = () => {
                             ...additionalfields,
                             sortOrder: addon?.addgroup?.sortorder,
                         },
+                        quantity: 1,
                         itemmap: addon?.itemmap
                     });
                 }
@@ -269,9 +270,6 @@ const ProductDetail = () => {
                 });
             }
 
-            // console.log(data)
-            // return
-            console.log('done', data.addons)
             data.addons = data?.addons ? checkParentProductCode(data.addons) : []
 
             const payloadData = JSON.stringify(data);
@@ -301,6 +299,34 @@ const ProductDetail = () => {
         }
     };
 
+    useEffect(() => {
+        const result = removeParentProductCode(selectedOptions);
+        if (JSON.stringify(result) !== JSON.stringify(selectedOptions)) {
+            setSelectedOptions(result);
+        }
+    }, [selectedOptions]);
+    
+
+    const removeParentProductCode = (addons) => {
+        return addons.filter(addon => {
+            // If the addon has a parent product code requirement
+            if (addon?.additionalfields?.parentProductCode) {
+                const parentProductCodes = addon.additionalfields.parentProductCode;
+                
+                // Check if any parent product is present in the addons with quantity > 0
+                const parentAddons = addons.some(
+                    a => parentProductCodes.includes(a.productcode) && a.quantity > 0
+                );
+                
+                // Keep the addon only if parent addons exist
+                return parentAddons;
+            }
+            
+            // Keep addons without parent product code requirements
+            return true;
+        });
+    };
+
     const checkParentProductCode = (addons) => {
         for (const addon of addons) {
             if (addon?.additionalfields?.parentProductCode) {
@@ -312,7 +338,7 @@ const ProductDetail = () => {
             }
           }
           return addons;
-      }
+    }
       
 
     const createCart = () => {
@@ -424,6 +450,7 @@ const ProductDetail = () => {
                     [addon]: productpricecode,
                     price,
                     index: i + 1,
+                    quantity: 1,
                     groupId: addon,
                     productcode: option.productcode,
                     itemidx: option.itemidx,
@@ -463,6 +490,7 @@ const ProductDetail = () => {
                         price,
                         itemidx,
                         productcode,
+                        quantity: 1,
                         title: option?.articlefields?.title,
                         additionalfields: { ...additionalfields, sortOrder },
                     },
