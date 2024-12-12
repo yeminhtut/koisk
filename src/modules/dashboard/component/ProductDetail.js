@@ -112,6 +112,7 @@ const ProductDetail = () => {
         productAddons.forEach((item) => {
             item.addons.forEach((addon, index) => {
                 if (editAddons.includes(addon.productcode)) {
+                    const { additionalfields } = addon
                     result.push({
                         [addon.groupid]: addon.productpricecode,
                         index: index + 1,
@@ -121,6 +122,7 @@ const ProductDetail = () => {
                         productpricecode: addon.productpricecode,
                         price: addon.price,
                         additionalfields: {
+                            ...additionalfields,
                             sortOrder: addon?.addgroup?.sortorder,
                         },
                         itemmap: addon?.itemmap
@@ -212,12 +214,15 @@ const ProductDetail = () => {
             if (selectedOptions.length > 0) {
                 data.addons = selectedOptions.map((obj) => {
                     const groupId = Object.keys(obj)[0];
+                    const { additionalfields, productcode } = obj
                     return {
                         orderid,
                         productpricecode: obj[groupId],
                         quantity,
                         itemidx: obj.itemidx,
+                        productcode,
                         additionalfields: {
+                            ...additionalfields,
                             sortOrder: obj?.additionalfields?.sortOrder,
                         },
                     };
@@ -264,6 +269,11 @@ const ProductDetail = () => {
                 });
             }
 
+            // console.log(data)
+            // return
+
+            data.addons = checkParentProductCode(data.addons)
+
             const payloadData = JSON.stringify(data);
 
             const response = await axios.post(
@@ -290,6 +300,20 @@ const ProductDetail = () => {
             console.error("Error adding item to cart:", error);
         }
     };
+
+    const checkParentProductCode = (addons) => {
+        for (const addon of addons) {
+            if (addon?.additionalfields?.parentProductCode) {
+              const parentProductCodes = addon.additionalfields.parentProductCode;
+              const parentAddons = addons.some(a => parentProductCodes.includes(a.productcode) && a.quantity > 0);
+              if (!parentAddons) {
+                addon.quantity = 0;
+              }
+            }
+          }
+          return addons;
+      }
+      
 
     const createCart = () => {
         const data = JSON.stringify({
@@ -427,7 +451,7 @@ const ProductDetail = () => {
     const handleOptionChange = (addon, option, productpricecode, group) => {
         const flattened = selectedOptions.flatMap((obj) => Object.values(obj));
         const isIncluded = flattened.includes(productpricecode);
-        const { price, itemidx } = option;
+        const { price, itemidx , additionalfields, productcode } = option;
         const { sortOrder } = group;
         setSelectedOptions((prevSelectedOptions) => {
             if (!isIncluded) {
@@ -438,7 +462,9 @@ const ProductDetail = () => {
                         [addon]: productpricecode,
                         price,
                         itemidx,
-                        additionalfields: { sortOrder },
+                        productcode,
+                        title: option?.articlefields?.title,
+                        additionalfields: { ...additionalfields, sortOrder },
                     },
                 ];
             } else {
@@ -453,40 +479,6 @@ const ProductDetail = () => {
             }
         });
     };
-
-    const getChecked = (option) => {
-        return selectedOptions.some((item) =>
-            Object.values(item).includes(option.productpricecode),
-        );
-    };
-
-    const getParentGroup = (option) => {
-        const { itemmap } = option
-        if (!itemmap) return true;
-        const result = Object.entries(itemmap).reduce(
-            (acc, [groupId, indexString]) => {
-                const targetIndexes = indexString.split(", ").map(Number);
-
-                // Filter selectedOptions based on groupId and targetIndexes
-                const matches = selectedOptions.filter(
-                    (item) =>
-                        item.groupId === groupId &&
-                        targetIndexes.includes(item.index),
-                );
-
-                // If matches are found, accumulate their indexes in acc
-                if (matches.length > 0) {
-                    acc[groupId] = matches.map((item) => item.index).join(", ");
-                }
-
-                return acc;
-            },
-            {},
-        );
-        return !isEmptyObject(result);
-    };
-
-    const isEmptyObject = (obj) => Object.keys(obj).length === 0;
 
     const handleAddItem = (order) => {
         const { sessionid } = order;
@@ -512,118 +504,6 @@ const ProductDetail = () => {
                         <h2>{item?.articlefields?.title}</h2>
                         <p>{item?.articlefields?.description}</p>
                     </div>
-
-                    {/* <div>
-                        {productAddons &&
-                            productAddons.map((group, i) => (
-                                <div key={i} className="field px-4">
-                                    <h4>{group.addgroup.title}</h4>
-                                    {group.addons.map((option, index) => (
-                                        <div key={index}>
-                                            {group.addgroup.multiselect !==
-                                                "Y" && (
-                                                <div className="field-radiobutton flex">
-                                                    <label className="custom-radio">
-                                                        <input
-                                                            type="radio"
-                                                            name={group.addon}
-                                                            value={
-                                                                option.productpricecode
-                                                            }
-                                                            checked={selectedOptions.some(
-                                                                (item) =>
-                                                                    Object.values(
-                                                                        item,
-                                                                    ).includes(
-                                                                        option.productpricecode,
-                                                                    ),
-                                                            )}
-                                                            onChange={() =>
-                                                                handleRadioOptionChange(
-                                                                    group,
-                                                                    option,
-                                                                    index,
-                                                                )
-                                                            }
-                                                            className="hidden-radio"
-                                                        />
-                                                        <span
-                                                            className={`radiomark ${getChecked(option) ? "checked" : ""}`}
-                                                        ></span>
-                                                    </label>
-                                                    <label
-                                                        htmlFor={`${group.addon}_${option.id}`}
-                                                    >
-                                                        {
-                                                            option
-                                                                ?.articlefields
-                                                                ?.title
-                                                        }
-                                                    </label>
-                                                    <div className="ml-auto">
-                                                        {option?.price > 0
-                                                            ? `+ ${option.price.toFixed(2)}`
-                                                            : ""}
-                                                    </div>
-                                                </div>
-                                            )}
-                                            {group.addgroup.multiselect ==
-                                                "Y" &&
-                                                getParentGroup(option) && (
-                                                    <div
-                                                        key={option.id}
-                                                        className="field-radiobutton flex"
-                                                    >
-                                                        <label className="custom-checkbox">
-                                                            <input
-                                                                type="checkbox"
-                                                                value={
-                                                                    option.productpricecode
-                                                                }
-                                                                checked={selectedOptions.some(
-                                                                    (item) =>
-                                                                        Object.values(
-                                                                            item,
-                                                                        ).includes(
-                                                                            option.productpricecode,
-                                                                        ),
-                                                                )}
-                                                                onChange={(e) =>
-                                                                    handleOptionChange(
-                                                                        group.addon,
-                                                                        option,
-                                                                        option.productpricecode,
-                                                                        group,
-                                                                    )
-                                                                }
-                                                                className="hidden-checkbox"
-                                                            />
-                                                            <span
-                                                                className={`checkmark ${getChecked(option) ? "checked" : ""}`}
-                                                            />
-                                                        </label>
-                                                        <label
-                                                            htmlFor={`${group.addon}_${option.id}`}
-                                                        >
-                                                            {
-                                                                option
-                                                                    ?.articlefields
-                                                                    ?.title
-                                                            }
-                                                        </label>
-                                                        <div className="ml-auto">
-                                                            {option?.price > 0
-                                                                ? `+ ${option.price.toFixed(2)}`
-                                                                : ""}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                        </div>
-                                    ))}
-                                    <Divider />
-                                </div>
-                            ))}
-                    </div> */}
                     <ProductAddon
                         productAddons={productAddons}
                         selectedOptions={selectedOptions}
