@@ -8,6 +8,7 @@ import Layout from "./Layout";
 import ProductListContainer from "./modules/dashboard/container/ProductListContainer";
 import LoginContainer from "./modules/auth/container/LoginContainer";
 import ProductDetail from "./modules/dashboard/component/ProductDetail";
+import EditableJSON from "./modules/tutorial/Nested";
 
 const AuthRequiredContainer = () => {
     return <LayoutContainer />;
@@ -47,6 +48,7 @@ const AppRoutes = () => (
             />
             <Route path="/" element={<WelcomeComponent />} />
             <Route path="/auth" element={<LoginContainer />} />
+            <Route path="/test" element={<EditableJSON />} />
             <Route element={<AuthRequiredContainer />} path="/*" />
         </Routes>
     </BrowserRouter>

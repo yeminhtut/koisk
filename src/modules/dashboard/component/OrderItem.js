@@ -52,10 +52,11 @@ const OrderItem = ({
 
     return (
         <div className="flex mb-4 align-items-center">
-            <div className="col p-0">
-                <h4 className="m-0 c-brown" style={{ fontSize: '16pt'}}>{description}</h4>
+            <div className="col-4 p-0">
+                <h4 className="m-0 c-brown f-14pt">{description}</h4>
                 <p className="m-0 mt-1 c-brown" style={{ fontSize: '12pt'}}>{getItemAddonDescriptions()}</p>
             </div>
+            <div className="col-1"></div>
             <div className="col p-0">
                 <div className="order-selector flex justify-content-center align-items-center my-2">
                     <button onClick={decreaseItemQty} className="quantity-btn">

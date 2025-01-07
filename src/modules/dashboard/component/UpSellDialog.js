@@ -1,7 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router";
 import { Dialog } from "primereact/dialog";
-import { Button } from "primereact/button";
 import storage from "../../../utils/storage";
 
 const URL = window?.config?.END_POINT;
@@ -78,16 +77,12 @@ const UpSellDialog = ({ visible, onHide, product, handleHideUpsell }) => {
                         onClick={handleLink}
                     >
                         <span
-                            style={{
-                                margin: "0 0 0.5rem",
-                                fontWeight: "600",
-                                color: "#51545d",
-                                display: 'block'
-                            }}
+                            className="fw-6 c-gray f-14pt mb-2 block"
                         >
                             {title}
                         </span>
                         <span
+                            className="fw-6 f-14pt mb-2 block"
                             style={{ color: "#b5850f", fontWeight: "600" }}
                             
                         >

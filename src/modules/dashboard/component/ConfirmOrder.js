@@ -216,9 +216,9 @@ const ConfirmOrder = () => {
                 setIsLoadingEft(false); // Optionally stop the loading state
                 setIsSubmitted(false);
                 toast.current.show({
-                    severity: "error",
-                    summary: "Error",
-                    detail: `No response from EFT`,
+                    severity: "contrast",
+                    summary: "error",
+                    detail: `no response from eft`,
                     life: 10000,
                 });
             }, timeOut); // 30 seconds in milliseconds
@@ -558,12 +558,12 @@ const ConfirmOrder = () => {
         <>
             {isLoadingEft && (
                 <div className="overlay" id="overlay">
-                    <ImageIcon
-                        iconName={"loading.gif"}
-                        style={{ width: "300px", height: "300px" }}
+                    <img src="http://188.166.220.103:9000/media/test/[dark-grey]-proceed-to-payment-14pt.png"
+                        style={{ width: "320px", height: "155px" }}
                     />
                 </div>
             )}
+            
             <div className="flex w-full" style={{ height: "100vh" }}>
                 <div className="p-4 pt-2 w-full">
                     <div className="flex align-items-center justify-content-between mb-2">

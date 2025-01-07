@@ -6,12 +6,12 @@ const MenuItem = ({ label, imgSrc, handleCloseDetail }) => {
         <div className="menu-item" style={{ padding: '10px'}}>
             <div className="menu-item-left">
                 <div onClick={handleCloseDetail}>
-                    <ImageIcon
-                        iconName={"close.png"}
+                    <ImageIcon  
+                        iconName={"ts-close.png"}
                         style={{ width: "20px", height: "20px" }}
                     />
                 </div>
-                <label htmlFor={label} className="menu-item-label">
+                <label htmlFor={label} className="c-gray f-14pt fw-6 ml-2">
                     {label}
                 </label>
             </div>

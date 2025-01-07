@@ -10,7 +10,7 @@ const { END_POINT: URL, AuthorizationHeader: token } = window?.config || {};
 const withInactivityDetector = (WrappedComponent) => {
     return (props) => {
         const navigate = useNavigate();
-
+        const inactiveTime = storage.get('inactiveTimeout') || 0
         // Refs for inactivity and redirection timers
         const timeoutRef = useRef(null);
         const redirectTimeoutRef = useRef(null);
@@ -43,6 +43,9 @@ const withInactivityDetector = (WrappedComponent) => {
 
         // Clear and reset timers for inactivity
         const resetInactivityTimer = () => {
+            if (inactiveTime == 0) {
+                return
+            }
             clearTimeout(timeoutRef.current);
             clearTimeout(redirectTimeoutRef.current);
 

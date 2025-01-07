@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { Divider } from "primereact/divider";
 import { Toast } from "primereact/toast";
 import { useNavigate, useLocation } from "react-router-dom";
 import storage from "../../../utils/storage";
@@ -230,7 +229,7 @@ const ProductDetail = () => {
                 }); // old one
             }
 
-            if (record.addons) {
+            if (record.addons && record.addons.length > 0) {
                 const oriArr = record.addons.map((ao) => ({
                     orderid: ao.orderid,
                     productpricecode: `${ao.storeproductid}-${ao.productcode}`,
@@ -528,8 +527,8 @@ const ProductDetail = () => {
                         handleCloseDetail={handleCloseDetail}
                         isEdit={isEdit}
                     />
-                    <div className="item-info px-4 pt-4 pb-2">
-                        <h2>{item?.articlefields?.title}</h2>
+                    <div className="item-info px-4 pt-2 pb-2">
+                        <div className="f-14pt fw-6 c-gray my-2">{item?.articlefields?.title}</div>
                         <p>{item?.articlefields?.description}</p>
                     </div>
                     {productAddons && productAddons.length > 0 && (

@@ -110,7 +110,7 @@ body {
 
 .standard-header {
   color: #51545D;
-  font-size: 16pt;
+  font-size: 14pt;
   font-style: normal;
   font-weight: 600;
   line-height: normal;
@@ -515,9 +515,9 @@ body {
 }
 
 .payment-option.selected {
-  border-color: #007bff; /* Highlighted color when selected */
-  background-color: #f0f8ff; /* Light background when selected */
-  color: #007bff;
+  border-color: #51545D; /* Highlighted color when selected */
+  //background-color: #f0f8ff; /* Light background when selected */
+  color: #51545D;
 }
 
 .overlay {
@@ -684,7 +684,6 @@ body {
   border: none;
   background: none;
   cursor: pointer;
-  font-size: 16pt;
   text-transform: lowercase;
 }
 
@@ -834,6 +833,39 @@ body {
 
 .upsell-dialog {
   border-top-left-radius: 16px;
+}
+
+.c-gray {
+  color: #51545D;
+}
+
+.f-14pt {
+  font-size: 14pt;
+}
+
+.f-12pt {
+  font-size: 12pt;
+}
+
+.fw-6 {
+  font-weight: 600;
+}
+
+.p-toast .p-toast-message.p-toast-message-error {
+  color: #51545D
+}
+
+.p-toast-message.p-toast-message-contrast {
+  background: #fff;
+  color: #51545D
+}
+
+.p-toast-summary {
+  font-size: 14pt
+}
+
+.p-toast-detail {
+  font-size: 12pt;
 }
 
 

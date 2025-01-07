@@ -236,17 +236,14 @@ const ProductList = () => {
                 <div className="top-bar px-3">
                     <div className="tabs">
                         {menuItems.map((category, index) => (
-                            <button
+                            <div
                                 key={index}
-                                className={
-                                    activeTab === index
-                                        ? "active-tab menu-tab"
-                                        : "menu-tab"
-                                }
+                                className={`menu-tab ${activeTab === index ? "active-tab" : "c-gray"} f-14pt fw-6 `}
+
                                 onClick={() => handleTabClick(index)}
                             >
                                 {category.title}
-                            </button>
+                            </div>
                         ))}
                     </div>
                 </div>

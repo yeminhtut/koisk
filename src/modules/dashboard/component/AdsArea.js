@@ -34,7 +34,10 @@ const AdsArea = () => {
                     const { sco } = additionalfields;
                     if (sco) {
                         const { ad_images } = JSON.parse(sco);
-                        setLeftImages(ad_images);
+                        if (ad_images) {
+                            setLeftImages(ad_images);
+                        }
+                        
                     }
                 }
                 else {
@@ -56,11 +59,14 @@ const AdsArea = () => {
             style={{ padding: "0px" }}
         >
             <div className="ad-container">
-                <img
+                {leftImages.length > 0 && (
+                    <img
                     src={leftImages[0]?.image}
                     alt={`Ad`}
                     className={`ad-image sticky-image`}
                 />
+                )}
+                
             </div>
             {/* <FloatingHomeButton onHomeClick={handleHomeClick} /> */}
         </div>

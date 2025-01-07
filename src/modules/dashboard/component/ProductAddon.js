@@ -8,7 +8,7 @@ const RadioOption = ({
     getChecked,
 }) => (
     <div className="field-radiobutton flex">
-        <label className="custom-radio">
+        <label className="custom-radio ml-0">
             <input
                 type="radio"
                 name={group.addon}
@@ -39,7 +39,7 @@ const CheckboxOption = ({
 }) => {
     return (
         <div className="field-radiobutton flex">
-            <label className="custom-checkbox">
+            <label className="custom-checkbox ml-0">
                 <input
                     type="checkbox"
                     value={option.productpricecode}
@@ -94,7 +94,7 @@ const ProductAddon = ({
 
     const processAddons = (addons) => {
         if (addons.length < 1) {
-            return []
+            return [];
         }
         // Create a map for easy access to addon items by addon and itemidx
         const parentMap = {};
@@ -137,6 +137,12 @@ const ProductAddon = ({
             });
         });
 
+        addons.forEach((item) => {
+            if (item.addons && Array.isArray(item.addons)) {
+                item.addons.sort((a, b) => a.id - b.id);
+            }
+        });
+
         return addons;
     };
 
@@ -145,16 +151,22 @@ const ProductAddon = ({
     const scrollToNextSection = (index) => {
         const nextIndex = index + 1;
         if (sectionRefs.current[nextIndex]) {
-            sectionRefs.current[nextIndex].scrollIntoView({ behavior: 'smooth', block: 'start' });
+            sectionRefs.current[nextIndex].scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+            });
         }
     };
-
 
     const updatedData = processAddons(productAddons);
     return (
         <div>
             {updatedData.map((group, i) => (
-                <div key={i} className="field px-4" ref={(el) => (sectionRefs.current[i] = el)}>
+                <div
+                    key={i}
+                    className="field px-4"
+                    ref={(el) => (sectionRefs.current[i] = el)}
+                >
                     <h4>{group.addgroup.title}</h4>
                     {group.addons.map((option, index) => {
                         const isChecked = selectedOptions.some((item) =>
@@ -170,7 +182,11 @@ const ProductAddon = ({
                                         option={option}
                                         isChecked={isChecked}
                                         handleChange={() => {
-                                            handleRadioOptionChange(group, option, index);
+                                            handleRadioOptionChange(
+                                                group,
+                                                option,
+                                                index,
+                                            );
                                             scrollToNextSection(i); // Scroll to the next section
                                         }}
                                         getChecked={getChecked}
