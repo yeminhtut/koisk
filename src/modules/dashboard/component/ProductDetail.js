@@ -166,7 +166,7 @@ const ProductDetail = () => {
             }
             else {
                 toast.current.show({
-                    severity: "error",
+                    severity: "contrast",
                     summary: "Error",
                     detail: 'store not open',
                 });
@@ -347,6 +347,7 @@ const ProductDetail = () => {
             qno: "Y",
             terminalid: terminalid,
             saleschannel: "dxpkiosk",
+            deviceid: storeid+terminalid
         });
 
         axios
@@ -365,7 +366,7 @@ const ProductDetail = () => {
                     //setCurrCart(response.data);
                 } else {
                     toast.current.show({
-                        severity: "error",
+                        severity: "contrast",
                         summary: "Info",
                         detail: response.data.message,
                     });
@@ -519,7 +520,7 @@ const ProductDetail = () => {
     return (
         <>
             {item && item.productcode && (
-                <div className="chat-area" style={{ paddingBottom: "300px" }}>
+                <div className="product-container" style={{ paddingBottom: "300px" }}>
                     <Toast ref={toast} />
                     <MenuItem
                         label={item?.articlefields.title}

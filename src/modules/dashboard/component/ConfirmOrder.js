@@ -3,17 +3,18 @@ import { useNavigate } from "react-router";
 import axios from "axios";
 import { Button } from "primereact/button";
 import { Toast } from "primereact/toast";
-import { InputText } from "primereact/inputtext";
-import { Divider } from "primereact/divider";
 import { Dialog } from "primereact/dialog";
 import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
 import storage from "../../../utils/storage";
 import ImageIcon from "../../../components/ImageIcon";
 import OrderConfirmation from "./OrderConfirmation";
-import withInactivityDetector from "../../../withInactivityDetector";
 import OrderItem from "./OrderItem";
 import NewMemberDialog from "./NewMemberDialog";
 import UpSellDialog from "./UpSellDialog";
+import LoadingEft from "./LoadingEft";
+import PlaceOrderButton from "../../order/PlaceOrderButton";
+import PaymentMethodSelector from "../../order/PaymentMethodSelector";
+import MemberDialog from "../../order/MemberDialog";
 
 const {
     END_POINT: URL,
@@ -34,9 +35,7 @@ const ConfirmOrder = () => {
     const [cartDetail, setCartDetail] = useState({});
     const [isSuccess, setIsSuccess] = useState(false);
     const [orderNumber, setOrderNumber] = useState("");
-    const [isDeviceActive, setIsDeviceActive] = useState(false);
     const [currentIdx, setCurrentIdx] = useState();
-    const devices = JSON.parse(storage.get("registeredDeviceData"));
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [tenderTypes, setTenderTypes] = useState([]);
     const [selectedMethod, setSelectedMethod] = useState("cash");
@@ -48,41 +47,38 @@ const ConfirmOrder = () => {
     const [storeid, setStoreId] = useState();
     const [terminalid, setTerminalId] = useState();
     const [dialogVisible, setDialogVisible] = useState(false);
-    const [terminalInfo, setTerminalInfo] = useState({})
-
-    const [loginMember, setLoginMember] = useState({})
-
-    const [isUpSell, setIsUpSell] = useState(false)
-    const [upsellProduct, setUpSellProduct] = useState()
-    const [upSellVisible, setUpSellVisible] = useState(false)
+    const [terminalInfo, setTerminalInfo] = useState({});
+    const [isUpSell, setIsUpSell] = useState(false);
+    const [upsellProduct, setUpSellProduct] = useState();
+    const [upSellVisible, setUpSellVisible] = useState(false);
+    const [signupVisible, setSignUpVisible] = useState(false);
 
     useEffect(() => {
         const storeId = storage.get("storeid");
         const terminalId = storage.get("terminalid");
-        const terminalData = JSON.parse(storage.get('terminalInfo'))
-        const storeUpsell = JSON.parse(storage.get('storeUpsell'))
+        const terminalData = JSON.parse(storage.get("terminalInfo"));
+        const storeUpsell = JSON.parse(storage.get("storeUpsell"));
         if (storeUpsell?.id) {
-            setIsUpSell(true)
+            setIsUpSell(true);
             setUpSellProduct({
                 productCode: storeUpsell?.fields?.properties?.productcode,
                 image: storeUpsell?.imagegallery?.image1,
                 title: storeUpsell?.fields?.title_long,
-            })
+            });
         }
         setStoreId(storeId);
         setTerminalId(terminalId);
-        setTerminalInfo(terminalData)
+        setTerminalInfo(terminalData);
     }, []);
 
     const closeDialog = () => {
         setVisible(false);
-        setIsSubmitted(false)
+        setIsSubmitted(false);
     };
 
     useEffect(() => {
         if (storeid && terminalid) {
             getTerminalTenders();
-            //getDeviceStatus();
         }
     }, [storeid, terminalid]);
 
@@ -106,40 +102,6 @@ const ConfirmOrder = () => {
                 if (response.status === 200 && response.data) {
                     const { socketurl } = response.data;
                     handleWebSocket(socketurl, timer);
-                }
-            })
-            .catch((error) => {
-                console.log(error);
-            });
-    };
-
-    const getDeviceStatus = () => {
-        const { eft } = devices;
-        let config = {
-            method: "get",
-            maxBodyLength: Infinity,
-            url: `${URL}/broker/v1/device/clients`,
-            headers: {
-                Authorization: token,
-            },
-        };
-        //check device status
-        axios
-            .request(config)
-            .then((response) => {
-                const result = response.data;
-                const deviceStatus = result.find((r) => r.deviceid == eft);
-                if (deviceStatus && deviceStatus.status === "Active") {
-                    setIsDeviceActive(true);
-                } else {
-                    toast.current.show({
-                        severity: "error",
-                        summary: "Error",
-                        detail: "Device is not active",
-                        life: 10000,
-                    });
-                    setIsDeviceActive(false);
-                    setIsSubmitted(false);
                 }
             })
             .catch((error) => {
@@ -202,13 +164,59 @@ const ConfirmOrder = () => {
             });
     };
 
-    const handlePayment = (sessionid) => {
+    const checkDeviceStatus = async () => {
+        const { deviceid } = selectedMethod;
+        const config = {
+            method: "get",
+            url: `${URL}/broker/v1/device/clients`,
+            headers: {
+                Authorization: token,
+            },
+        };
+
+        try {
+            const response = await axios.request(config);
+            const result = response.data;
+            const deviceStatus = result.find((r) => r.deviceid == deviceid);
+            return deviceStatus && deviceStatus.status === "Active";
+        } catch (error) {
+            console.error("Error fetching device status:", error);
+            return false; // Default to false on error
+        }
+    };
+
+    const checkDevice = async () => {
+        const isActive = await checkDeviceStatus();
+        return isActive; // Return the resolved value
+    };
+
+    const checkHandlePayment = async () => {
+        if (selectedMethod.title.toLowerCase() === "cash") {
+            handlePayment();
+        } else {
+            const isActive = await checkDevice(); // Wait for the result of checkDevice
+            if (isActive) {
+                console.log("Device is active. Proceed with payment.");
+                handlePayment();
+            } else {
+                console.log("Device is not active. Show an error toast.");
+                toast.current.show({
+                    severity: "contrast",
+                    summary: "Error",
+                    detail: "Device is not active",
+                    life: 10000,
+                });
+            }
+        }
+    };
+
+    const handlePayment = () => {
+        const sessionid = storage.get("sessionid");
         setIsSubmitted(true);
         if (selectedMethod.title.toLowerCase() === "cash") {
             return handleCashPayment(sessionid);
         } else {
             const timeOut = timeOutTime > 0 ? timeOutTime * 1000 : 30000;
-            //if (isDeviceActive) {
             setIsLoadingEft(true);
             paymentSignOn();
             const timer = setTimeout(() => {
@@ -223,15 +231,6 @@ const ConfirmOrder = () => {
                 });
             }, timeOut); // 30 seconds in milliseconds
             getWebSocket(timer);
-            // }
-            // else {
-            //     toast.current.show({
-            //         severity: "error",
-            //         summary: "Error",
-            //         detail: `Device is not active`,
-            //         life: 10000,
-            //     });
-            // }
         }
     };
 
@@ -268,7 +267,7 @@ const ConfirmOrder = () => {
             if (response.message.response.status === "failure") {
                 // Handle failure case, e.g., show a message to the user
                 toast.current.show({
-                    severity: "error",
+                    severity: "contrast",
                     summary: "Error",
                     detail: `Transaction Failed: ${response.message.response.responsetext}`,
                     life: 10000,
@@ -319,8 +318,7 @@ const ConfirmOrder = () => {
                     headers: {
                         Authorization: token,
                         "Content-Type": "application/json",
-                    },
-                    maxBodyLength: Infinity,
+                    }
                 },
             );
             const { idx } = result.data;
@@ -359,13 +357,13 @@ const ConfirmOrder = () => {
     const handleCashPayment = async (session) => {
         try {
             const { cartid, orderid, totalamount } = cartDetail;
-            const newSessionId = session ? session : sessionid
+            const newSessionId = session ? session : sessionid;
             const paymentData = {
                 description: "cash",
                 orderid,
                 payamount: totalamount,
                 paytype: "Cash",
-                paytyperef: "Cash"
+                paytyperef: "Cash",
             };
             const result = await axios.post(
                 `${URL}/pos/v1/cart/${cartid}/payment?${newSessionId}`,
@@ -410,7 +408,7 @@ const ConfirmOrder = () => {
             );
             setOrderNumber(data);
             setIsSuccess(true);
-            storage.remove('noUpSell')
+            storage.remove("noUpSell");
         } catch (error) {
             console.error("Error closing cart:", error);
         }
@@ -431,7 +429,7 @@ const ConfirmOrder = () => {
                 },
             );
             storage.remove("currCart");
-            storage.remove('noUpSell')
+            storage.remove("noUpSell");
             navigate("/", { replace: true });
         } catch (error) {
             console.error("Error voiding cart:", error);
@@ -448,7 +446,7 @@ const ConfirmOrder = () => {
                 ? `${order.storeproductid}-${order.productcode}`
                 : order.productcode,
             quantity: quantity,
-            additionalfields: order.additionalfields
+            additionalfields: order.additionalfields,
         }));
         return result;
     };
@@ -530,7 +528,7 @@ const ConfirmOrder = () => {
                 setTenderTypes(tenderTypes);
             } else {
                 toast.current.show({
-                    severity: "error",
+                    severity: "contrast",
                     summary: "Error",
                     detail: "No payment type is defined",
                     life: 10000,
@@ -557,13 +555,11 @@ const ConfirmOrder = () => {
     const CartView = () => (
         <>
             {isLoadingEft && (
-                <div className="overlay" id="overlay">
-                    <img src="http://188.166.220.103:9000/media/test/[dark-grey]-proceed-to-payment-14pt.png"
-                        style={{ width: "320px", height: "155px" }}
-                    />
+                <div className="overlay flex align-items-center" id="overlay">
+                    <LoadingEft />
                 </div>
             )}
-            
+
             <div className="flex w-full" style={{ height: "100vh" }}>
                 <div className="p-4 pt-2 w-full">
                     <div className="flex align-items-center justify-content-between mb-2">
@@ -648,9 +644,7 @@ const ConfirmOrder = () => {
             </div>
         </>
     );
-    const checkMember = () => {
-        setVisible(true);
-    };
+    const checkMember = () => setVisible(true);
 
     const accept = () => clearCart();
 
@@ -670,99 +664,91 @@ const ConfirmOrder = () => {
 
     const handleExistingMember = (member) => {
         setVisible(false);
-        updateCartWithMember(member)
+        updateCartWithMember(member);
     };
 
-    const updateCartWithMember = member => {
-        const { orderid, cartid } = cartDetail
-        const { memberid } = member
+    const updateCartWithMember = (member) => {
+        const { orderid, cartid } = cartDetail;
+        const { memberid } = member;
         const data = {
             orderid,
-            memberid
-        }
+            memberid,
+        };
 
         let config = {
-            method: 'put',
+            method: "put",
             url: `${URL}/pos/v1/cart/${cartid}/update/partial/member?sessionid=${sessionid}`,
-            headers: { 
-              'Authorization': token, 
-              'Content-Type': 'application/json'
+            headers: {
+                Authorization: token,
+                "Content-Type": "application/json",
             },
-            data : data
-          };
-          
-          axios.request(config)
-          .then((response) => {
-            const { sessionid } = response.data
-            setSessionId(sessionid)
-            storage.set('sessionid', sessionid)
-            handlePayment(sessionid)
-          })
-          .catch((error) => {
-            console.log(error);
-          });
-    }
+            data: data,
+        };
+
+        axios
+            .request(config)
+            .then((response) => {
+                const { sessionid } = response.data;
+                setSessionId(sessionid);
+                storage.set("sessionid", sessionid);
+                checkHandlePayment();
+            })
+            .catch((error) => {
+                console.log(error);
+            });
+    };
 
     const handleSkip = () => {
         setVisible(false);
-        handlePayment();
+        checkHandlePayment();
     };
 
     const placeOrder = () => {
-        const { additionalfields } = terminalInfo
-        const shownUpSell = storage.get('noUpSell')
-        const { items } = cartDetail
-        const { productCode } = upsellProduct
-        const exists = items.some(item => item.productcode === productCode);
+        const { additionalfields } = terminalInfo;
+        const shownUpSell = storage.get("noUpSell");
+        const { items } = cartDetail;
+        const { productCode } = upsellProduct;
+        const exists = items.some((item) => item.productcode === productCode);
         if (isUpSell && !shownUpSell && !exists) {
-            setUpSellVisible(true)
-            setIsSubmitted(true)
+            setUpSellVisible(true);
+            setIsSubmitted(true);
+        } else if (additionalfields?.enablemember === "Y") {
+            checkMember();
+            setIsSubmitted(true);
+        } else {
+            checkHandlePayment();
         }
-        else if (additionalfields?.enablemember === 'Y') {
-            checkMember()
-            setIsSubmitted(true)
-        }
-        else {
-            handlePayment()
-        }
-        //additionalfields?.enablemember === 'Y' ? checkMember() : handlePayment();
-        //handlePayment()
     };
 
     const handleHideUpsell = () => {
-        const { additionalfields } = terminalInfo
-        setUpSellVisible(false)
-        
-        if (additionalfields?.enablemember === 'Y') {
-            checkMember()
-        }
-        else {
-            setIsSubmitted(false)
-            handlePayment()
-        }
-        //additionalfields?.enablemember === 'Y' ? checkMember() : handlePayment();
-    }
+        const { additionalfields } = terminalInfo;
+        setUpSellVisible(false);
 
-    const [signupVisible, setSignUpVisible] = useState(false)
+        if (additionalfields?.enablemember === "Y") {
+            checkMember();
+        } else {
+            setIsSubmitted(false);
+            checkHandlePayment();
+        }
+    };
 
     const handleSignUpLink = () => {
-        setVisible(false)
-        setSignUpVisible(true)
-    }
+        setVisible(false);
+        setSignUpVisible(true);
+    };
 
     const handleNewMember = (member) => {
         if (member?.memberid) {
-            updateCartWithMember(member)
+            updateCartWithMember(member);
+        } else {
+            checkHandlePayment();
         }
-        else {
-            handlePayment()
-        }
-    }
+    };
 
     const handleNewMemberDialogHide = () => {
-        setSignUpVisible(false)
-        setIsSubmitted(false)
-    }
+        setSignUpVisible(false);
+        setIsSubmitted(false);
+    };
 
     return (
         <>
@@ -777,183 +763,28 @@ const ConfirmOrder = () => {
                     handleBack={handleBack}
                 />
             )}
-            <OrderDialog
+            <MemberDialog
                 handleSkip={handleSkip}
                 visible={visible}
                 closeDialog={closeDialog}
                 handleExistingMember={handleExistingMember}
                 handleSignUpLink={handleSignUpLink}
             />
-            <NewMemberDialog 
+            <NewMemberDialog
                 visible={signupVisible}
                 onHide={handleNewMemberDialogHide}
                 handleNewMember={handleNewMember}
             />
             {upsellProduct?.productCode && (
-                <UpSellDialog 
-                visible={upSellVisible}
-                onHide={() => setUpSellVisible(false)}
-                product={upsellProduct}
-                handleHideUpsell={handleHideUpsell}
-            />
+                <UpSellDialog
+                    visible={upSellVisible}
+                    onHide={() => setUpSellVisible(false)}
+                    product={upsellProduct}
+                    handleHideUpsell={handleHideUpsell}
+                />
             )}
-            
         </>
     );
 };
 
-const PaymentMethodSelector = ({
-    tenderTypes,
-    selectedMethod,
-    handleSelection,
-}) => {
-    const getTenderInfo = (tender) => {
-        const { title, additionalfields } = tender;
-        const { tenderimg } = additionalfields;
-        if (tenderimg.length > 0) {
-            return <img src={URL + tenderimg} style={{ width: "100%" }} />;
-        }
-        return <div className='p-4'>{title}</div>;
-    };
-    return (
-        <div className="mb-4">
-            <h3 className="pl-4" style={{ marginTop: "8px" }}>
-                Choose Payment Method
-            </h3>
-            <div className="flex px-4" style={{ overflowY: "scroll" }}>
-                {tenderTypes.map((tender, i) => (
-                    <div
-                        key={i}
-                        className={`flex justify-content-center align-items-center mr-2 payment-option 
-                        ${selectedMethod === tender ? "selected" : ""}`}
-                        onClick={() => handleSelection(tender)}
-                    >
-                        {getTenderInfo(tender)}
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-};
-
-const OrderDialog = ({
-    visible,
-    closeDialog,
-    handleExistingMember,
-    handleSkip,
-    handleSignUpLink
-}) => {
-    const [memberEmail, setMemberEmail] = useState("");
-    const [errorMessage, setErrorMessage] = useState("");
-
-    const handleChangeEmail = (e) => {
-        setMemberEmail(e.target.value);
-        setErrorMessage(""); // Clear error when user types
-    };
-
-    const handleMember = () => {
-        if (!memberEmail) {
-            setErrorMessage("Please enter an email address.");
-            return;
-        }
-
-        let config = {
-            method: "get",
-            url: `${URL}/crm/v1/member/search?search_field=emailid&search_condi=eq&search_value=${memberEmail}`,
-            headers: {
-                Authorization: "test",
-            },
-        };
-
-        axios
-            .request(config)
-            .then((response) => {
-                if (response.status === 200 && response.data?.length > 0) {
-                    handleExistingMember(response.data[0]);
-                } else {
-                    setErrorMessage("Email address not found!");
-                }
-            })
-            .catch((error) => {
-                console.error(error);
-                setErrorMessage("An error occurred. Please try again.");
-            });
-    };
-
-    return (
-        <Dialog
-            visible={visible}
-            onHide={closeDialog}
-            header="Place order with an account"
-            style={{ width: "350px" }}
-            className="order-dialog"
-            draggable={false}
-            modal
-        >
-            <div className="order-form-container">
-                <label htmlFor="email" className="email-label mb-2">
-                    Email Address
-                </label>
-                <InputText
-                    id="email"
-                    className={`email-input w-full mt-2 ${
-                        errorMessage ? "p-invalid" : ""
-                    }`}
-                    placeholder="ja12_123@gmail.com"
-                    value={memberEmail}
-                    onChange={handleChangeEmail}
-                />
-                {errorMessage && (
-                    <small className="p-error">{errorMessage}</small>
-                )}
-                <Button
-                    type="button"
-                    className="w-full mt-2"
-                    style={{
-                        backgroundColor: "#707070",
-                        color: "#FFF",
-                        fontSize: "18px",
-                    }}
-                    onClick={handleMember}
-                    label="done"
-                />
-                <Divider align="center">
-                    <span>OR</span>
-                </Divider>
-                <p className="signup-text text-center">
-                    <span className="signup-link" onClick={handleSignUpLink}>
-                        Sign up
-                    </span>
-                </p>
-                <p className="skip-link text-right cursor-pointer">
-                    <span onClick={handleSkip}>skip</span>
-                </p>
-            </div>
-        </Dialog>
-    );
-};
-
-// Extracted Place Order Button Component
-const PlaceOrderButton = ({
-    checkMember,
-    currency,
-    getBottomTotalAmount,
-    isSubmitted,
-    selectedMethod,
-}) => (
-    <Button
-        type="button"
-        className="w-full p-4 custom-btn"
-        style={{
-            backgroundColor: "#51545D",
-            color: "#FFF",
-            fontSize: "16pt",
-        }}
-        onClick={checkMember}
-        label={`place order ${currency}${getBottomTotalAmount()}`}
-        disabled={isSubmitted || !selectedMethod.title}
-    />
-);
-
 export default ConfirmOrder;
-//export default withInactivityDetector(ConfirmOrder);
