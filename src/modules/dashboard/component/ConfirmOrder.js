@@ -51,7 +51,7 @@ const ConfirmOrder = () => {
     const [isUpSell, setIsUpSell] = useState(false);
     const [upsellProduct, setUpSellProduct] = useState();
     const [upSellVisible, setUpSellVisible] = useState(false);
-    const [signupVisible, setSignUpVisible] = useState(false);
+    const [signupVisible, setSignUpVisible] = useState(true);
 
     useEffect(() => {
         const storeId = storage.get("storeid");

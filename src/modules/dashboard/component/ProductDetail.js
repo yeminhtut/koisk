@@ -288,7 +288,7 @@ const ProductDetail = () => {
                 handleAddItem(response.data);
             } else {
                 toast.current.show({
-                    severity: "info",
+                    severity: "contrast",
                     summary: "Info",
                     detail: response.data.message,
                 });

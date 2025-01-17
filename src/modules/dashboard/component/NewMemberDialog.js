@@ -77,8 +77,6 @@ const NewMemberDialog = ({ visible, onHide, handleNewMember }) => {
             dateofbirth: formData.dob, // Ensure DOB is formatted as 'dd-MM-yyyy'
         };
 
-        console.log('here', apiData)
-
         const config = {
             method: "post",
             url: `${URL}/crm/v1/member/save`,
@@ -94,7 +92,8 @@ const NewMemberDialog = ({ visible, onHide, handleNewMember }) => {
             if (response.status == 200) {
                 handleNewMember(response.data);
             } else {
-                handleNewMember();
+                console.log('hi')
+                //handleNewMember();
             }
             // Optionally show a success message or perform further actions
             // alert("Member saved successfully!");

@@ -5,6 +5,10 @@ import { InputText } from "primereact/inputtext";
 import { Divider } from "primereact/divider";
 import { Button } from "primereact/button";
 
+const {
+    END_POINT: URL
+} = window?.config || {};
+
 const MemberDialog = ({
     visible,
     closeDialog,
