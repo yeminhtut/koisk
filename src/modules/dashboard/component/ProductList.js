@@ -121,25 +121,6 @@ const ProductList = () => {
         }
     }, [activeTab]);
 
-    // const getMenuName = async (category) => {
-    //     try {
-    //         const response = await axios.get(
-    //             `${URL}/sales/v1/category/search/fields?categorycode=${category}`,
-    //             { headers: { Authorization: token } }
-    //         );
-
-    //         if (response.status === 200 && response.data.length > 0) {
-    //             const { title, sortorder } = response.data[0];
-    //             setCategoryGroup((prev) => [
-    //                 ...prev,
-    //                 { title, categorycodes: category, sortorder }
-    //             ]);
-    //         }
-    //     } catch (error) {
-    //         console.error(error);
-    //     }
-    // };
-
     const getMenuName = async (category) => {
         // Skip categories that have already been processed
         if (processedCategories.current.has(category)) return;

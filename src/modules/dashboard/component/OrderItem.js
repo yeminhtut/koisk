@@ -57,7 +57,7 @@ const OrderItem = ({
                 <p className="m-0 mt-1 c-brown" style={{ fontSize: '12pt'}}>{getItemAddonDescriptions()}</p>
             </div>
             <div className="col-1"></div>
-            <div className="col p-0">
+            <div className="col-3 p-0">
                 <div className="order-selector flex justify-content-center align-items-center my-2">
                     <button onClick={decreaseItemQty} className="quantity-btn">
                         -
@@ -68,8 +68,8 @@ const OrderItem = ({
                     </button>
                 </div>
             </div>
-            <div className="col text-right">{getTotalAmount().toFixed(2)}</div>
-            <div className="col text-right pr-0 flex justify-content-end">
+            <div className="col-2 text-right">{getTotalAmount().toFixed(2)}</div>
+            <div className="col-2 text-right pr-0 flex justify-content-end">
                 <div
                     onClick={() => handleEditItem(item)}
                     style={{

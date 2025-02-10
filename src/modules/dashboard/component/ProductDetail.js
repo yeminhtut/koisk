@@ -159,6 +159,8 @@ const ProductDetail = () => {
             : `${process.env.PUBLIC_URL}/assets/images/ic_nonproduct.png`;
 
     const handleAdd = async () => {
+        //temp
+        //currCart?.cartid ? addItem(currCart) : createCart();
         try {
             const posActive = await getPosStatus();
             if (posActive === 'Y') {
@@ -520,7 +522,7 @@ const ProductDetail = () => {
     return (
         <>
             {item && item.productcode && (
-                <div className="product-container" style={{ paddingBottom: "300px" }}>
+                <div className="product-container pb-5">
                     <Toast ref={toast} />
                     <MenuItem
                         label={item?.articlefields.title}

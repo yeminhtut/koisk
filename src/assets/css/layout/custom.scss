@@ -847,6 +847,10 @@ body {
   font-size: 12pt;
 }
 
+.f-16pt {
+  font-size: 16pt;
+}
+
 .fw-6 {
   font-weight: 600;
 }
@@ -909,6 +913,42 @@ body {
     opacity: 0;
   }
 }
+
+.hnh-dialog.p-inputtext:enabled:focus{
+  box-shadow: none;
+  border-color: none;
+}
+.p-inputtext:enabled:hover {
+  border-color:#d1d5db
+}
+
+.p-inputtext:enabled:focus {
+  box-shadow: none;
+  border-color:#d1d5db;
+}
+
+.p-button {
+  border: 1px solid #51545D
+}
+
+.p-button:focus{
+  box-shadow: none;
+}
+
+.signup-dialog {
+  transform: translateY(0);
+  transition: transform 0.3s ease-in-out;
+}
+
+.signup-dialog.keyboard-open {
+  transform: translateY(-30%);
+  transition: transform 0.3s ease-in-out;
+}
+
+.f-10pt {
+  font-size: 10pt;
+}
+
 
 
 

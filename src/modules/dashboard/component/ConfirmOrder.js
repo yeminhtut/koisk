@@ -51,7 +51,7 @@ const ConfirmOrder = () => {
     const [isUpSell, setIsUpSell] = useState(false);
     const [upsellProduct, setUpSellProduct] = useState();
     const [upSellVisible, setUpSellVisible] = useState(false);
-    const [signupVisible, setSignUpVisible] = useState(true);
+    const [signupVisible, setSignUpVisible] = useState(false);
 
     useEffect(() => {
         const storeId = storage.get("storeid");
@@ -191,6 +191,9 @@ const ConfirmOrder = () => {
     };
 
     const checkHandlePayment = async () => {
+        if (!selectedMethod.title) {
+            return;
+        }
         if (selectedMethod.title.toLowerCase() === "cash") {
             handlePayment();
         } else {
@@ -206,6 +209,7 @@ const ConfirmOrder = () => {
                     detail: "Device is not active",
                     life: 10000,
                 });
+                setIsSubmitted(false);
             }
         }
     };
@@ -318,7 +322,7 @@ const ConfirmOrder = () => {
                     headers: {
                         Authorization: token,
                         "Content-Type": "application/json",
-                    }
+                    },
                 },
             );
             const { idx } = result.data;
@@ -414,6 +418,11 @@ const ConfirmOrder = () => {
         }
     };
 
+    const handleVoidClear = () => {
+        //check it is last item
+        console.log('go')
+    }
+
     const clearCart = async () => {
         try {
             const { cartid, orderid } = cartDetail;
@@ -501,6 +510,7 @@ const ConfirmOrder = () => {
 
     const handleSelection = (method) => {
         setSelectedMethod(method);
+        setIsSubmitted(false);
     };
 
     const getTerminalTenders = async () => {
@@ -583,7 +593,7 @@ const ConfirmOrder = () => {
                         className="scrollable h-full"
                         style={{ paddingBottom: "280px" }}
                     >
-                        <div className="mb-4">
+                        <div className="mb-5">
                             <h3 style={{ fontSize: "12pt" }}>Order Items</h3>
                             {cartDetail.items?.map((item, index) => (
                                 <OrderItem
@@ -598,6 +608,54 @@ const ConfirmOrder = () => {
                                 />
                             ))}
                         </div>
+                        {cartDetail?.totalamount && (
+                            <div className="mb-4 align-items-center ml-2">
+                                {[
+                                    {
+                                        label: "item total",
+                                        value: cartDetail.totalamount,
+                                    },
+                                    {
+                                        label: "discounts",
+                                        value: cartDetail.totaldiscountamount,
+                                    },
+                                    {
+                                        label: "subtotal",
+                                        value: cartDetail.subtotalamount,
+                                    },
+                                    {
+                                        label: "vatable amount",
+                                        value: cartDetail.totaltaxableamount,
+                                    },
+                                    {
+                                        label: "vat",
+                                        value: cartDetail.totaltaxamount,
+                                        cssCls: "bold"
+                                    },
+                                    {
+                                        label: "total",
+                                        value: cartDetail.totalamount,
+                                        cssCls: "font-bold"
+                                    },
+                                ].map(({ label, value, cssCls }, index) => (
+                                    <div className="flex" key={index}>
+                                        <div className="col-4 p-0">
+                                            <span className={`w-full block c-brown f-10pt ${cssCls}`}>
+                                                {label}
+                                            </span>
+                                        </div>
+                                        <div className="col-1" />
+                                        <div className="col-3 p-0" />
+                                        <div className={`col-2 p-0 text-right ${cssCls}`}>
+                                            <span className="w-full f-10pt">
+                                                {value.toFixed(2)}
+                                            </span>
+                                        </div>
+                                        <div className="col-2 text-right pr-0 flex justify-content-end" />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                     {tenderTypes.length > 0 && (
                         <div

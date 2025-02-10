@@ -7,7 +7,7 @@ const URL = window?.config?.END_POINT;
 
 const UpSellDialog = ({ visible, onHide, product, handleHideUpsell }) => {
     const navigate = useNavigate();
-    const { title, image } = product;
+    const { image } = product;
 
     const handleLink = () => {
         const storeProducts = JSON.parse(storage.get("storeProduct"));
@@ -32,22 +32,21 @@ const UpSellDialog = ({ visible, onHide, product, handleHideUpsell }) => {
             modal
             onHide={onHide}
             className="upsell-dialog"
+            style={{
+                height: `${image.height}px`,
+                borderRadius: "16px",
+            }}
             content={() => (
-                <div
-                    style={{
-                        textAlign: "center",
-                        borderRadius: "16px",
-                        background: "#FFF",
-                    }}
-                >
-                    <div style={{ position: "relative" }}>
+                <div style={{ position: "relative" }}>
                         <img
                             src={`${URL}/${image.uri}`}
                             alt="Butterscotch Latte"
                             style={{
                                 width: `${image.width}px`,
                                 height: `${image.height}px`,
-                                borderRadius: "16px 16px 0 0",
+                                borderRadius: "16px",
+                                maxWidth: '720px',
+                                maxHeight: '600px'
                             }}
                             onClick={handleLink}
                         />
@@ -66,30 +65,6 @@ const UpSellDialog = ({ visible, onHide, product, handleHideUpsell }) => {
 
                         </span>
                     </div>
-
-                    {/* Text Section */}
-                    <div
-                        style={{
-                            padding: "20px",
-                            fontSize: "18px",
-                            paddingTop: "16px",
-                        }}
-                        onClick={handleLink}
-                    >
-                        <span
-                            className="fw-6 c-gray f-14pt mb-2 block"
-                        >
-                            {title}
-                        </span>
-                        <span
-                            className="fw-6 f-14pt mb-2 block"
-                            style={{ color: "#b5850f", fontWeight: "600" }}
-                            
-                        >
-                            View Drink
-                        </span>
-                    </div>
-                </div>
             )}
         ></Dialog>
     );

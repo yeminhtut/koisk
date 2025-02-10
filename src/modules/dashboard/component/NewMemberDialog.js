@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Dialog } from "primereact/dialog";
 import { InputText } from "primereact/inputtext";
+import { InputNumber } from 'primereact/inputnumber';
 import { Button } from "primereact/button";
-import { InputNumber } from "primereact/inputnumber";
+import { Toast } from "primereact/toast";
 import axios from "axios";
 import DobInput from "./DobInput";
 
@@ -18,11 +19,26 @@ const NewMemberDialog = ({ visible, onHide, handleNewMember }) => {
         email: "",
         dob: "",
         mobileno: "",
-        countryCode: "",
+        countryCode: "+63",
         phNumber: ""
     });
-
+    const toast = useRef(null);
     const [errors, setErrors] = useState({});
+    const [keyboardOpen, setKeyboardOpen] = useState(false);
+
+    
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerHeight < 600) { // Adjust based on tablet screen height
+                setKeyboardOpen(true);
+            } else {
+                setKeyboardOpen(false);
+            }
+        };
+    
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -65,18 +81,18 @@ const NewMemberDialog = ({ visible, onHide, handleNewMember }) => {
             setErrors(newErrors);
             return;
         }
-
+    
         // Prepare the data for the API call
         const apiData = {
             userid: "",
             signupby: "email",
             firstname: formData.firstName,
             lastname: formData.lastName,
-            mobileno: formData.countryCode +' ' + formData.phNumber,
+            mobileno: `${formData.countryCode} ${formData.phNumber}`,
             emailid: formData.email,
             dateofbirth: formData.dob, // Ensure DOB is formatted as 'dd-MM-yyyy'
         };
-
+    
         const config = {
             method: "post",
             url: `${URL}/crm/v1/member/save`,
@@ -86,24 +102,37 @@ const NewMemberDialog = ({ visible, onHide, handleNewMember }) => {
             },
             data: JSON.stringify(apiData),
         };
-
+    
         try {
             const response = await axios.request(config);
-            if (response.status == 200) {
-                handleNewMember(response.data);
-            } else {
-                console.log('hi')
-                //handleNewMember();
+    
+            switch (response.status) {
+                case 200:
+                    handleNewMember(response.data);
+                    onHide();
+                    break;
+    
+                case 206:
+                    toast.current.show({
+                        severity: "contrast",
+                        summary: "Error",
+                        detail: response?.data?.message || "Partial success",
+                        life: 10000,
+                    });
+                    onHide();
+                    break;
+    
+                default:
+                    handleNewMember(); // Optional fallback behavior
+                    break;
             }
-            // Optionally show a success message or perform further actions
-            // alert("Member saved successfully!");
-            onHide();
         } catch (error) {
-            handleNewMember();
+            console.error("Error saving member:", error);
+            alert("An error occurred while saving the member. Please try again.");
             onHide();
-            //alert("An error occurred while saving the member. Please try again.");
         }
     };
+    
 
     const handleNumberChange = (e) => {
         const { name, value } = e.target;
@@ -132,19 +161,22 @@ const NewMemberDialog = ({ visible, onHide, handleNewMember }) => {
         </div>
     );
     return (
-        <Dialog
-            header={
-                <div style={{ display: "flex", alignItems: "center" }}>
-                    <span style={{ marginLeft: "8px" }}>
-                        order as a new member
-                    </span>
-                </div>
-            }
-            visible={visible}
-            style={{ width: "40vw" }}
-            footer={renderFooter()}
-            onHide={onHide}
-        >
+        <>
+            <Toast ref={toast} />
+            <Dialog
+                className={`signup-dialog`}
+                header={
+                    <div style={{ display: "flex", alignItems: "center" }}>
+                        <span className="f-16pt">
+                            order as a new member
+                        </span>
+                    </div>
+                }
+                style={{ width: '40vw'}}
+                visible={visible}
+                footer={renderFooter()}
+                onHide={onHide}
+            >
             <div className="p-fluid hnh-dialog">
                 <div className="flex">
                     <div className="p-field mr-2" style={{ width: "50%" }}>
@@ -205,7 +237,7 @@ const NewMemberDialog = ({ visible, onHide, handleNewMember }) => {
                             value={formData.countryCode}
                             onChange={handleNumberChange}
                             maxLength={3} // Optional: Limit the number of digits
-                            placeholder="+82"
+                            placeholder="+63"
                         />
                         <InputText
                             id="phNumber"
@@ -222,6 +254,8 @@ const NewMemberDialog = ({ visible, onHide, handleNewMember }) => {
                 </div>
             </div>
         </Dialog>
+        </>
+        
     );
 };
 

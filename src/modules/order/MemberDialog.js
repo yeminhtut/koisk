@@ -6,7 +6,8 @@ import { Divider } from "primereact/divider";
 import { Button } from "primereact/button";
 
 const {
-    END_POINT: URL
+    END_POINT: URL,
+    AuthorizationHeader: token
 } = window?.config || {};
 
 const MemberDialog = ({
@@ -34,7 +35,7 @@ const MemberDialog = ({
             method: "get",
             url: `${URL}/crm/v1/member/search?search_field=emailid&search_condi=eq&search_value=${memberEmail}`,
             headers: {
-                Authorization: "test",
+                Authorization: token,
             },
         };
 
@@ -56,10 +57,9 @@ const MemberDialog = ({
         <Dialog
             visible={visible}
             onHide={closeDialog}
-            header="Place order with an account"
-            style={{ width: "350px" }}
+            header="place order with an account"
             className="order-dialog"
-            draggable={false}
+            draggable={true}
             modal
         >
             <div className="order-form-container">
@@ -92,12 +92,12 @@ const MemberDialog = ({
                 <Divider align="center">
                     <span>OR</span>
                 </Divider>
-                <p className="signup-text text-center">
+                <p className="signup-text text-center f-14pt cursor-pointer">
                     <span className="signup-link" onClick={handleSignUpLink}>
                         Sign up
                     </span>
                 </p>
-                <p className="skip-link text-right cursor-pointer">
+                <p className="skip-link text-right cursor-pointer f-14pt">
                     <span onClick={handleSkip}>skip</span>
                 </p>
             </div>
